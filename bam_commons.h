@@ -2,6 +2,7 @@
 #ifndef BAM_COMMONS_H
 #define BAM_COMMONS_H
 
+#include <pthread.h>
 #include <sys/time.h>
 
 #define OPTIMAL_THREADS_FOR_COMPUTE_CAPABILITY_20	512

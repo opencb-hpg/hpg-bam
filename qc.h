@@ -5,24 +5,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "bam_coverage.h"
-#include "bam_data_batch.h"
-#include "bam_data_batch_list.h"
-#include "bam_qc_batch.h"
-#include "bam_qc_report.h"
-#include "bam_reader.h"
-#include "commons.h"
 #include "cuda_commons.h"
-#include "file_utils.h"
-#include "gff_data.h"
-#include "gff_reader.h"
-#include "list.h"
-#include "log.h"
-#include "qc_hash.h"
-#include "qc_kernel_omp.h"
-#include "sam.h"
-#include "system_utils.h"
 
+// extern "C" {
+//     #include "bam_coverage.h"
+//     #include "bam_data_batch.h"
+//     #include "bam_data_batch_list.h"
+//     #include "bam_qc_batch.h"
+//     #include "bam_qc_report.h"
+//     #include "bam_reader.h"
+//     #include "commons.h"    
+//     #include "file_utils.h"
+//     #include "gff_data.h"
+//     #include "gff_reader.h"
+//     #include "list.h"
+//     #include "log.h"
+//     #include "qc_hash.h"
+//     #include "qc_kernel_omp.h"
+//     #include "sam.h"
+//     #include "system_utils.h"
+// }
 
 #define VALID_ALIGNMENT_FILE_SUFFIX	".valid"
 #define INVALID_ALIGNMENT_FILE_SUFFIX	".invalid"

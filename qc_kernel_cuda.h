@@ -6,7 +6,7 @@
 #include "bam_data_batch.h"
 #include "commons.h"
 #include "cuda_commons.h"
-#include "log.h"
+//#include "log.h"
 
 #define NUMBER_OF_NTS_IN_GENOME 	3200000000
 #define WINDOW_SIZE_FOR_COVERAGE_UNIFORMITY	1000

@@ -51,10 +51,11 @@ typedef struct qc_hash_list {
 // ------------------------------------------------
 
 qc_hash_list_item_t* qc_hash_list_item_new(char* id_seq, int tid, int start_coordinate, int seq_length, int paired_end);
-void qc_hash_list_item_free(qc_hash_list_item_t* item_p, bool all);
-void qc_hash_item_free(qc_hash_list_item_t* qc_hash_list_item_p, bool all);
+void qc_hash_list_item_free(qc_hash_list_item_t* item_p, int all);
+void qc_hash_item_free(qc_hash_list_item_t* qc_hash_list_item_p, int all);
 
-void qc_hash_list_init(qc_hash_list_t* qc_hash_list_p, int producers);
+void qc_hash_list_init(qc_hash_list_t* list_p);
+//void qc_hash_list_init(qc_hash_list_t* qc_hash_list_p, int producers);
 void qc_hash_list_lock(qc_hash_list_t* list_p);
 void qc_hash_list_unlock(qc_hash_list_t* list_p);
 void qc_hash_list_insert(qc_hash_list_item_t* qc_hash_list_item_p, qc_hash_list_t* qc_hash_list_p);

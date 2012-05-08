@@ -43,7 +43,8 @@ qc_hash_list_item_t* qc_hash_list_item_new(char* id_seq, int tid, int start_coor
   item_p->id_seq = (char*) calloc(strlen(id_seq), sizeof(char));
   strncpy(item_p->id_seq, id_seq, strlen(id_seq));
   
-  item_p->lock = PTHREAD_MUTEX_INITIALIZER;
+  //item_p->lock = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(&(item_p->lock), NULL);
   item_p->next_p = NULL;  
   item_p->prev_p = NULL;
   
@@ -60,7 +61,7 @@ qc_hash_list_item_t* qc_hash_list_item_new(char* id_seq, int tid, int start_coor
 // associated to the pointers in his structure
 //-----------------------------------------------------
 
-void qc_hash_list_item_free(qc_hash_list_item_t* item_p, bool all) {
+void qc_hash_list_item_free(qc_hash_list_item_t* item_p, int all) {
   
   //printf("qc_hash_list_item_free : %x\n", item_p);
   if (all) {  
@@ -85,7 +86,8 @@ void qc_hash_list_item_free(qc_hash_list_item_t* item_p, bool all) {
 
 void qc_hash_list_init(qc_hash_list_t* list_p) {
    memset(list_p, 0, sizeof(qc_hash_list_t));
-   list_p->lock = PTHREAD_MUTEX_INITIALIZER;
+   //list_p->lock = PTHREAD_MUTEX_INITIALIZER;
+   pthread_mutex_init(&(list_p->lock), NULL);
 }
 
 //-----------------------------------------------------
@@ -234,6 +236,6 @@ void qc_hash_list_items_free(qc_hash_list_t* list_p) {
 
   //if (list_p->length > 0) printf("-------------> list_p->length: %i\n", list_p->length);
   while ((item_p = qc_hash_list_remove(list_p)) != NULL) {
-    qc_hash_list_item_free(item_p, true);
+    qc_hash_list_item_free(item_p, 1);
   }
 }

@@ -45,7 +45,7 @@ typedef struct gff_data {
 // ------------------------------------------------
 
 gff_data_t* gff_data_new(char* gff_filename);
-gff_data_t* gff_data_new();
+//gff_data_t* gff_data_new();
 void gff_lines_free(gff_line_t* gff_lines_p);
 void gff_data_free(gff_data_t* gff_data_p);
 void gff_data_print_regions(gff_data_t* gff_data_p);

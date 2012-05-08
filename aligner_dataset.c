@@ -91,7 +91,7 @@ aligner_dataset_list_t* aligner_dataset_list_realloc(aligner_dataset_list_t* lis
 }
 
 void aligner_dataset_list_sort_by_id(aligner_dataset_list_t* list_p) {
-    sort_dataset_by_id(list_p);
+    sort_dataset_list_by_id(list_p);
 }
 
 void aligner_dataset_list_write(aligner_dataset_list_t* list_p, char* filename) {

@@ -25,7 +25,7 @@
 //  p r i v a t e  f u n c t i o n s
 // ------------------------------------------------
 
-qc_hash_list_item_t* qc_hash_find_id_seq_(qc_hash_t* qc_hash_p, char* id_seq, unsigned int &alignment_hash);
+qc_hash_list_item_t* qc_hash_find_id_seq_(qc_hash_t* qc_hash_p, char* id_seq, unsigned int* alignment_hash);
 void qc_hash_insert_id_seq_(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end, unsigned int alignment_hash);
 void qc_hash_update_id_seq_(qc_hash_list_item_t* item_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end);
 void qc_hash_incr_count_(qc_hash_list_item_t* item_p, char* id_seq, short int paired_end);
@@ -74,7 +74,8 @@ void qc_hash_free(qc_hash_t* qc_hash_p, int all) {
 //-----------------------------------------------------
 
 void qc_hash_init(qc_hash_t* qc_hash_p) {
-  qc_hash_p->lock = PTHREAD_MUTEX_INITIALIZER;
+  //qc_hash_p->lock = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(&(qc_hash_p->lock), NULL);
 }
 
 //-----------------------------------------------------
@@ -106,8 +107,8 @@ void qc_hash_unlock(qc_hash_t* qc_hash_p) {
 void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end) {
 
   unsigned int alignment_hash;
-  qc_hash_list_item_t* found_item_p = qc_hash_find_id_seq_(qc_hash_p, id_seq, alignment_hash);
-  //printf("alignment_hash: %i\n", alignment_hash);
+  qc_hash_list_item_t* found_item_p = qc_hash_find_id_seq_(qc_hash_p, id_seq, &alignment_hash);
+
 
   if (found_item_p != NULL) {
     qc_hash_update_id_seq_(found_item_p, id_seq, tid, start_coordinate, seq_length, paired_end);
@@ -166,7 +167,7 @@ void qc_hash_perform_calculations(qc_hash_t* qc_hash_p, qc_mapping_counter_t* co
       
       num_mappings += qc_hash_list_item_perform_calculations_(item_p, counter_p, mean_paired_end_distance, max_distance_size,cpu_num_threads);
 
-      qc_hash_list_item_free(item_p, true);
+      qc_hash_list_item_free(item_p, 1);
     }
   }
 
@@ -196,8 +197,14 @@ void qc_hash_print(qc_hash_t* qc_hash_p) {
 
 void qc_mapping_counter_init(qc_mapping_counter_t* qc_mapping_counter_p) {
   
-  qc_mapping_counter_p->num_mappings_histogram = {0};
-  qc_mapping_counter_p->lock = PTHREAD_MUTEX_INITIALIZER;
+  //qc_mapping_counter_p->num_mappings_histogram = {0};  
+  //for (int i = 0; i < (MAX_MAPPING_COUNT_IN_HISTOGRAM + 2); i++) {
+  //    qc_mapping_counter_p->num_mappings_histogram[i] = 0;
+  //}
+  
+  memset(&qc_mapping_counter_p->num_mappings_histogram, 0, (MAX_MAPPING_COUNT_IN_HISTOGRAM + 2) * sizeof(int));
+  //qc_mapping_counter_p->lock = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(&(qc_mapping_counter_p->lock), NULL);
   
 }
 
@@ -209,13 +216,13 @@ void qc_mapping_counter_init(qc_mapping_counter_t* qc_mapping_counter_p) {
 // qc_hash_find_id_seq_
 // ------------------------------------------------
 
-qc_hash_list_item_t* qc_hash_find_id_seq_(qc_hash_t* qc_hash_p, char* id_seq, unsigned int &alignment_hash) {
+qc_hash_list_item_t* qc_hash_find_id_seq_(qc_hash_t* qc_hash_p, char* id_seq, unsigned int* alignment_hash) {
   
   int id_seq_length = strlen(id_seq);
   
   //unsigned int find_index = (RSHash(id_seq, id_seq_length - 2) % QC_HASH_LENGTH);
   unsigned int find_index = (RSHash(id_seq, id_seq_length) % QC_HASH_LENGTH);
-  alignment_hash = find_index;
+  *alignment_hash = find_index;
   
   //printf("id_seq: %s, find_index: %i\n", id_seq, find_index);
   

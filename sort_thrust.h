@@ -14,7 +14,7 @@
 */
 
 void sort_alignments_by_position(alignments_list_t* alignments_list_p, int chromosome);
-void sort_dataset_by_id(aligner_dataset_list_t* aligner_dataset_list_p);
+void sort_dataset_list_by_id(aligner_dataset_list_t* aligner_dataset_list_p);
 
 /*
 	function to call thrust sorting for a single one-dimension vector

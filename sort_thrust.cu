@@ -17,7 +17,10 @@
 //#endif
   
 #include "bam_commons.h"
-#include "sort_thrust.h"
+
+extern "C" {
+    #include "sort_thrust.h"
+}
 
 //------------------------------------------------------------------------------------
 // function prototypes
@@ -255,6 +258,6 @@ void sort_key_value_char(char** keys, int* values, int length) {
 
 #endif
 
-void sort_dataset_by_id(aligner_dataset_list_t* list_p) {
+void sort_dataset_list_by_id(aligner_dataset_list_t* list_p) {
     sort_key_value_char(list_p->seq_id_p, list_p->indices_p, list_p->num_lines);
 }

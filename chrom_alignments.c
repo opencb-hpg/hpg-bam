@@ -28,8 +28,10 @@ chrom_alignments_t* chrom_alignments_new(int num_alignments) {
     chrom_alignments_p->indices_p = (int*) calloc(num_alignments, sizeof(int));
   #endif
   
-  chrom_alignments_p->alignment_count_lock = PTHREAD_MUTEX_INITIALIZER;
-  chrom_alignments_p->complete_lock = PTHREAD_MUTEX_INITIALIZER;
+  //chrom_alignments_p->alignment_count_lock = PTHREAD_MUTEX_INITIALIZER;
+  //chrom_alignments_p->complete_lock = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(&(chrom_alignments_p->alignment_count_lock), NULL);
+  pthread_mutex_init(&(chrom_alignments_p->complete_lock), NULL);
   chrom_alignments_p->alignment_count = 0;
   chrom_alignments_p->complete = 0;
   chrom_alignments_p->allocated_alignment = num_alignments;

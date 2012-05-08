@@ -20,13 +20,22 @@
   #include <thrust/copy.h>
 #endif
 
-#include "chrom_alignments.h"
-#include "sam.h"
-#include "sort.h"
-#include "sort_thrust.h"
+extern "C" {
+    #include "aligner_dataset.h"
+    #include "aligner_dataset_file.h"
+    #include "bam.h"
+    #include "bam_reader.h"
+    #include "bam_writer.h"
+    #include "chrom_alignments.h"    
+    #include "commons.h"
+    #include "file_utils.h"
+    #include "log.h"
+    #include "sam.h"
+    #include "sort.h"        
+    #include "system_utils.h"
+}
 
-#include "bam_reader.h"
-#include "bam_writer.h"
+#include "sort_thrust.h"
 
 #define BLOCK_SIZE	16
 

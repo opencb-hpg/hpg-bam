@@ -2,14 +2,14 @@
 #ifndef SORT_H_
 #define SORT_H_
 
-#include "bam.h"
-
-#include "aligner_dataset.h"
-#include "aligner_dataset_file.h"
-#include "commons.h"
-#include "file_utils.h"
-#include "log.h"
-#include "system_utils.h"
+// #include "bam.h"
+// 
+// #include "aligner_dataset.h"
+// #include "aligner_dataset_file.h"
+// #include "commons.h"
+// #include "file_utils.h"
+// #include "log.h"
+// #include "system_utils.h"
 #include "cuda_commons.h"
 
 #define SORTED_FILE_SUFFIX	".sorted"
@@ -19,7 +19,9 @@
 */
 
 void sort_bam_file(size_t batch_size, char* input_filename, char* output_directory);
-void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_directory);
+//extern "C" { 
+  void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_directory); 
+//}
 
 /*
       SORT SAM FILE

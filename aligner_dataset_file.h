@@ -62,7 +62,7 @@ aligner_dataset_file_t* aligner_dataset_fopen(char* filename);
  *  This function opens a dataset file and creates the structure for
  *  handling the file in the specified mode
  */
-aligner_dataset_file_t* aligner_dataset_fopen(char* filename, char* mode);
+aligner_dataset_file_t* aligner_dataset_fopen_mode(char* filename, char* mode);
 
 /**
  *  @brief Close an aligner dataset file and free the file handler

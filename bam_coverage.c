@@ -266,7 +266,7 @@ void bam_coverage_compute(bam_data_batch_t* batch_p, bam_chromosome_coverage_t* 
   } 
   #pragma omp barrier
 
-  bam_coverage_counter_mark_to_print(bam_chromosome_coverage_p, false);
+  bam_coverage_counter_mark_to_print(bam_chromosome_coverage_p, 0);
   bam_coverage_counter_print(bam_chromosome_coverage_p, output_directory, input_filename);
 }
 
@@ -381,7 +381,8 @@ void bam_coverage_compute_alignment_(int chromosome, int start_coordinate, uint3
       {
 	if (bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start] == NULL) {
 	  bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start] = (bam_coverage_counter_t*) calloc(1, sizeof(bam_coverage_counter_t));
-	  bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start]->lock = PTHREAD_MUTEX_INITIALIZER;
+	  //bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start]->lock = PTHREAD_MUTEX_INITIALIZER;
+	  pthread_mutex_init(&(bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start]->lock), NULL);
 	}
       }
 
@@ -391,7 +392,8 @@ void bam_coverage_compute_alignment_(int chromosome, int start_coordinate, uint3
       {
 	if (bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end] == NULL) {
 	  bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end] = (bam_coverage_counter_t*) calloc(1, sizeof(bam_coverage_counter_t));
-	  bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end]->lock = PTHREAD_MUTEX_INITIALIZER;
+	  //bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end]->lock = PTHREAD_MUTEX_INITIALIZER;
+	  pthread_mutex_init(&(bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end]->lock), NULL);
 	}
       }
       

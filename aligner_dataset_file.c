@@ -9,10 +9,10 @@
  * ******************************************************/
 
 aligner_dataset_file_t* aligner_dataset_fopen(char* filename) {
-    return aligner_dataset_fopen(filename, (char*)"r");
+    return aligner_dataset_fopen_mode(filename, (char*)"r");
 }
 
-aligner_dataset_file_t* aligner_dataset_fopen(char* filename, char* mode) {
+aligner_dataset_file_t* aligner_dataset_fopen_mode(char* filename, char* mode) {
     FILE* fd = fopen(filename, mode);
     if (fd == NULL) {
         char log_message[200];

@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
 	/*	PARSING QC PARAMETERS	*/
 	case 'a':
 	  //printf("option --qc selected, quality control selected\n");
-	  qc_step = true;
+	  qc_step = 1;
 	  break;
 	  
 	case 'b':
@@ -561,7 +561,7 @@ int main(int argc, char **argv) {
     validate_step = 0;
     sort_dataset_step = 0;
   }
-  
+
   if (qc_step) { 
     convert_step = 0;     
     sort_step = 0;     

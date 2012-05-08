@@ -29,7 +29,8 @@ gff_data_t* gff_data_new(char* gff_filename) {
     gff_data_p = (gff_data_t*) calloc(1, sizeof(gff_data_t));
     gff_data_p->gff_lines_p = (gff_line_t*) calloc(MAX_GFF_LINES, sizeof(gff_line_t));
     gff_data_p->gff_regions_p = (gff_region_t*) calloc(MAX_GFF_LINES, sizeof(gff_region_t));
-    gff_data_p->lock = PTHREAD_MUTEX_INITIALIZER;
+    //gff_data_p->lock = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_init(&(gff_data_p->lock), NULL);
     
     gff_data_p->num_regions = gff_file_read(gff_filename, gff_data_p->gff_lines_p);
     gff_data_p->actual_region = 0;

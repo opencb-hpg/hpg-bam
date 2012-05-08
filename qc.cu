@@ -7,7 +7,26 @@
 #ifndef QC_CU_
 #define QC_CU_
 
-#include "qc.h"
+extern "C" {
+    #include "bam_coverage.h"
+    #include "bam_data_batch.h"
+    #include "bam_data_batch_list.h"
+    #include "bam_qc_batch.h"
+    #include "bam_qc_report.h"
+    #include "bam_reader.h"
+    #include "commons.h"    
+    #include "file_utils.h"
+    #include "gff_data.h"
+    #include "gff_reader.h"
+    #include "list.h"    
+    #include "log.h"
+    #include "qc.h"
+    #include "qc_hash.h"
+    #include "qc_kernel_omp.h"
+    #include "sam.h"
+    #include "system_utils.h"
+}
+
 #include "qc_kernel_cuda.h"
 
 //------------------------------------------------------------------------------------
@@ -147,7 +166,8 @@ void* qc_calc_server(void* params_p) {
       usleep(10000);
       
     } else {
-      
+printf("1 ---->\n");      
+     
       //if (time_flag) { start_timer(t1_gpu); }
       
       if ((time_flag) && (gpus_standby_time == 0.0)) { stop_timer(t1_active_reader, t1_active_gpus, gpus_standby_time); }
@@ -166,6 +186,7 @@ void* qc_calc_server(void* params_p) {
       bam_data_batch_p = (bam_data_batch_t*) bam_data_batch_list_item_p->data_p;
       int num_alignments = bam_data_batch_p->num_alignments;      
       int num_blocks;
+printf("2 ---->\n");
 
       if (cpu_num_threads == 0) {		// GPU implementation
 
@@ -178,17 +199,24 @@ void* qc_calc_server(void* params_p) {
 	map_quality_p = (int*) calloc(num_blocks, sizeof(int));
 	alignment_length_p = (int*) calloc(num_blocks, sizeof(int));
 	qc_alignment_p = (qc_alignment_t*) calloc(bam_data_batch_p->num_alignments, sizeof(qc_alignment_t));
-	
+printf("3 ---->\n");
+printf("3.0 ---->\n");
 	//printf("bam data batch id %i, num_alignments: %i\n", bam_data_batch_list_item_p->id, bam_data_batch_list_item_p->batch_p->num_alignments);
 	
 	CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_core_data_p, (unsigned int) (num_alignments + 1) * sizeof(bam_data_core_t), 0) );
-	CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_qc_info_p, (unsigned int) sizeof(qc_info_t), 0) );      
+printf("3.1 ---->\n");
+	CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_qc_info_p, (unsigned int) sizeof(qc_info_t), 0) );
+printf("3.2 ---->\n");
 	CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_strand_counter_p, (unsigned int) num_blocks * sizeof(int), 0) );
+printf("3.3 ---->\n");
 	CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_map_quality_p, (unsigned int) num_blocks * sizeof(int), 0) );
+printf("3.4 ---->\n");
 	CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_alignment_length_p, (unsigned int) num_blocks * sizeof(int), 0) );
+printf("3.5 ---->\n");
 	CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_cigar_data_p, (unsigned int) bam_data_batch_p->num_cigar_operations * sizeof(uint32_t), 0) );
+printf("3.6 ---->\n");
 	CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_qc_alignment_p, (unsigned int) num_alignments * sizeof(qc_alignment_t), 0) );
-	
+printf("4 ---->\n");
 	//printf("memory usage: data_size = %.2f MB, data_indices_size = %.2f MB, gpu_result = %.2f MB, gpu_kmers = %.2f MB\n", fastq_batch_list_item_p->batch_p->data_size / 1e6, fastq_batch_list_item_p->batch_p->data_indices_size / 1e6,  ((unsigned int) fastq_batch_list_item_p->batch_p->num_reads * sizeof(qc_read_t)) / 1e6, ((unsigned int) fastq_batch_list_item_p->batch_p->num_reads * KMERS_COMBINATIONS * sizeof(qc_kmers_t)) / 1e6);
 	
 	CUDA_SAFE_CALL( cudaMemset((void*) d_qc_info_p, 0, (unsigned int) sizeof(qc_info_t)) );
@@ -200,7 +228,7 @@ void* qc_calc_server(void* params_p) {
 	call_kernel_basic_stats(dimGrid, dimBlock, d_core_data_p, d_qc_info_p, d_strand_counter_p, d_map_quality_p, d_alignment_length_p, num_alignments);
 	call_kernel_map_errors(dimGrid, dimBlock, d_core_data_p, d_cigar_data_p, d_qc_alignment_p, num_alignments);
 	CUDA_STOP_TIMER();
-	
+printf("5 ---->\n");	
   //       for (int j=0; j < bam_data_batch_list_item_p->batch_p->num_cigar_operations; j++) {
   // 	printf("cigar operation: %i, num nts: %i\n", (bam_data_batch_list_item_p->batch_p->cigar_data_p[j])&BAM_CIGAR_MASK, (bam_data_batch_list_item_p->batch_p->cigar_data_p[j])>>BAM_CIGAR_SHIFT);
   //       }
@@ -212,7 +240,7 @@ void* qc_calc_server(void* params_p) {
 	CUDA_SAFE_CALL( cudaMemcpy(map_quality_p, d_map_quality_p, num_blocks * sizeof(int), cudaMemcpyDeviceToHost) );
 	CUDA_SAFE_CALL( cudaMemcpy(alignment_length_p, d_alignment_length_p, num_blocks * sizeof(int), cudaMemcpyDeviceToHost) );
 	CUDA_SAFE_CALL( cudaMemcpy(qc_alignment_p, d_qc_alignment_p, num_alignments * sizeof(qc_alignment_t), cudaMemcpyDeviceToHost) );
-	
+printf("6 ---->\n");
 	// free memory
 	//
 	CUDA_SAFE_CALL( cudaFreeHost(d_core_data_p) );
@@ -237,7 +265,7 @@ void* qc_calc_server(void* params_p) {
 	cpu_bam_qc_map_errors(bam_data_batch_p->core_data_p, bam_data_batch_p->cigar_data_p, qc_alignment_p, num_alignments);
 	if (time_flag) { stop_timer(t1_gpu, t2_gpu, gpu_time); }
       }
-	
+printf("7 ---->\n");
 	//if (time_flag) { stop_timer(t1_gpu, t2_gpu, gpu_time); }
        
       // create a new qc_batch object
@@ -252,20 +280,21 @@ void* qc_calc_server(void* params_p) {
       bam_qc_batch_p->map_quality_p = map_quality_p;
       bam_qc_batch_p->alignment_length_p = alignment_length_p;
       //bam_qc_batch_p->alignments_p = bam_data_batch_list_item_p->alignments_p;
-
+printf("8 ---->\n");
       // and insert it into the bam_qc_batch_list
       //
       //bam_qc_batch_list_insert(bam_qc_batch_p, &bam_qc_batch_list);      
       list_item_t* item_p = list_item_new(bam_qc_batch_p->id, 0, bam_qc_batch_p);
       list_insert_item(item_p, &bam_qc_batch_list);
-
-      //qc_batch_list_print(&qc_batch_list);
+printf("-----> inserting in bam_qc_batch_list id: %i ---->\n", bam_qc_batch_p->id);
       
+      //qc_batch_list_print(&qc_batch_list);
+    
       // copy the the current batch item to the cpu batch list in order to perform CPU qc operations
       //bam_data_batch_list_insert(bam_data_batch_list_item_p, cpu_batch_list_p);
       list_insert_item(bam_data_batch_list_item_p, cpu_batch_list_p);
       //bam_data_batch_list_item_free(bam_data_batch_list_item_p, true);
-
+printf("-----> inserting in cpu_batch_list_p ---->\n");
       sprintf(log_message, "Thread-GPU:...processing for batch %i done !\n", bam_data_batch_list_item_p->id);
       LOG_DEBUG(log_message);
 
@@ -335,7 +364,7 @@ void* cpus_server(void* params_p) {
   char* gff_filename = input_p->gff_filename;
   char* output_directory = input_p->output_directory;
   char* input_filename = input_p->input_filename;
-  
+
   // delete previous coverage file to append new data
   bam_coverage_counter_delete_file(output_directory, input_filename);
 
@@ -346,7 +375,7 @@ void* cpus_server(void* params_p) {
   // variables for coverage (regions data)
   //
   bam_chromosome_coverage_t bam_chromosome_coverage[NUM_OF_CHROMOSOMES];
-  
+
   int j;
   for (j=0; j < NUM_OF_CHROMOSOMES; j++) {
     bam_chromosome_coverage_init(&bam_chromosome_coverage[j]); 
@@ -376,106 +405,107 @@ void* cpus_server(void* params_p) {
     //printf("Thread-CPU: waiting for batch....\n");
     //printf("gpus_alive: %i, bam_data_batch_list_item_p is NULL: %i\n", gpus_alive, (bam_data_batch_list_item_p == NULL));
 
-    if (bam_data_batch_list_item_p==NULL) {
-      //printf("Thread-CPU: waiting 1 s for reads....\n");
-
-      sched_yield();
-      
-      // Delay for a bit
-      //struct timespec ts;
-      //ts.tv_sec = 0;
-      //ts.tv_nsec = 100000000;
-      //nanosleep (&ts, NULL);
-      
-      usleep(10000);
-	    
-    } else {
-     
-      if ((time_flag) && (cpus_standby_time == 0.0)) { stop_timer(t1_active_reader, t1_active_cpus, cpus_standby_time); }
-		
-	char log_message[50];
-	sprintf(log_message, "Thread-CPU: processing for batch %i....\n", bam_data_batch_list_item_p->id);
-	LOG_DEBUG(log_message);	
-
-	// allocation memory for output results
-	//
-	bam_data_batch_p = (bam_data_batch_t*) bam_data_batch_list_item_p->data_p;
-	int num_alignments = bam_data_batch_p->num_alignments;
-	int cpu_num_threads = input_p->cpu_num_threads;
-
-	if (time_flag) { start_timer(t1_cpu); }
-	
-	char* id_seq;
-	int tid, start_coordinate, seq_length;
-	short int paired_end;
-	bam_data_core_t* core_data_p;
-
-	for (int i=0; i < bam_data_batch_p->num_alignments; i++) {
-	  id_seq = &(bam_data_batch_p->id_seq_data_p[bam_data_batch_p->core_data_p[i].id_seq_index]);
-	  
-	  // ---------------- T E S T ------------------
-	  //test_counter_alignments++;
-	  //char* id_seq_test = (char*) calloc(strlen(id_seq) + 2, sizeof(char));
-	  //strcpy(id_seq_test, id_seq);
-	  //strcat(id_seq_test, (i%2) == 1 ? "/1" : "/2");
-	  //printf("id_seq_test: %s\n", id_seq_test);	
-	  // ---------------- T E S T ------------------
-	  
-	  core_data_p = &(bam_data_batch_p->core_data_p[i]);
-
-	  tid = core_data_p->chromosome;
-	  start_coordinate = core_data_p->start_coordinate;
-	  seq_length = core_data_p->alignment_length;
-	  paired_end = core_data_p->paired_end;
-
-	  //printf("id seq: %s\n", id_seq);
-	  
-	  qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end);
-
-	  // ---------------- T E S T ------------------	
-	  //qc_hash_insert_alignment(qc_hash_p, id_seq_test, tid, start_coordinate, seq_length);
-	  // ---------------- T E S T ------------------	  
-	}
-
-	//if (time_flag) { start_timer(t1_coverage); }
-	
-	if (gff_data_batch_in_region(bam_data_batch_p, gff_data_p) != 0) {
-	    //printf("\nstart_position: %i\n", bam_data_batch_list_item_p->batch_p->start_positions[0]);
-	    //printf("end_position: %i\n", bam_data_batch_list_item_p->batch_p->last_alignments_position);
-	    //printf("chromosome: %i, region_start: %i, region_end: %i\n", gff_data_p->gff_regions_p[gff_data_p->actual_region].chromosome, gff_data_p->gff_regions_p[gff_data_p->actual_region].start, gff_data_p->gff_regions_p[gff_data_p->actual_region].end);
-	    //printf("gff_data_batch_in_region: %i\n", gff_data_batch_in_region(bam_data_batch_list_item_p->batch_p, gff_data_p));
-	  bam_coverage_compute(bam_data_batch_p, bam_chromosome_coverage, gff_data_p, output_directory, input_filename, cpu_num_threads);
-	}
-	
-	//if (time_flag) { stop_timer(t1_coverage, t2_coverage, coverage_time); }
-	//printf("total coverage time       (s): \t%10.5f\n", 0.000001 * coverage_time);
-	//printf("write time                (s): \t%10.5f\n", 0.000001 * write_time);
-      
-	if (time_flag) { stop_timer(t1_cpu, t2_cpu, cpu_time); }
-	
-	// F R E E  R E S O U R C E S
-
-	// free the current batch item if all processing with the batch is performed
-	//bam_data_batch_list_item_free(bam_data_batch_list_item_p, true);
-	bam_data_batch_free((bam_data_batch_t*) bam_data_batch_list_item_p->data_p);
-	list_item_free(bam_data_batch_list_item_p);
-	//printf("Thread-CPU:...processing for batch %i done !\n", qc_batch_p->id); 
-	
-	sprintf(log_message, "Thread-CPU:...processing for batch %i done !\n", bam_data_batch_list_item_p->id);
-	LOG_DEBUG(log_message);
-      
-      } // end if-else
-
+//     if (bam_data_batch_list_item_p==NULL) {
+//       //printf("Thread-CPU: waiting 1 s for reads....\n");
+// 
+//       sched_yield();
+//       
+//       // Delay for a bit
+//       //struct timespec ts;
+//       //ts.tv_sec = 0;
+//       //ts.tv_nsec = 100000000;
+//       //nanosleep (&ts, NULL);
+//       
+//       usleep(10000);     	    
+//     } else {
+//        
+//       if ((time_flag) && (cpus_standby_time == 0.0)) { stop_timer(t1_active_reader, t1_active_cpus, cpus_standby_time); }
+// 		
+// 	char log_message[50];
+// 	sprintf(log_message, "Thread-CPU: processing for batch %i....\n", bam_data_batch_list_item_p->id);
+// 	LOG_DEBUG(log_message);	
+// 
+// 	// allocation memory for output results
+// 	//
+// 	bam_data_batch_p = (bam_data_batch_t*) bam_data_batch_list_item_p->data_p;
+// 	int num_alignments = bam_data_batch_p->num_alignments;
+// 	int cpu_num_threads = input_p->cpu_num_threads;
+// 
+// 	if (time_flag) { start_timer(t1_cpu); }
+// 	
+// 	char* id_seq;
+// 	int tid, start_coordinate, seq_length;
+// 	short int paired_end;
+// 	bam_data_core_t* core_data_p;
+// 
+// 	for (int i=0; i < bam_data_batch_p->num_alignments; i++) {
+// 	  id_seq = &(bam_data_batch_p->id_seq_data_p[bam_data_batch_p->core_data_p[i].id_seq_index]);
+// 	  
+// 	  // ---------------- T E S T ------------------
+// 	  //test_counter_alignments++;
+// 	  //char* id_seq_test = (char*) calloc(strlen(id_seq) + 2, sizeof(char));
+// 	  //strcpy(id_seq_test, id_seq);
+// 	  //strcat(id_seq_test, (i%2) == 1 ? "/1" : "/2");
+// 	  //printf("id_seq_test: %s\n", id_seq_test);	
+// 	  // ---------------- T E S T ------------------
+// 	  
+// 	  core_data_p = &(bam_data_batch_p->core_data_p[i]);
+// 
+// 	  tid = core_data_p->chromosome;
+// 	  start_coordinate = core_data_p->start_coordinate;
+// 	  seq_length = core_data_p->alignment_length;
+// 	  paired_end = core_data_p->paired_end;
+// 
+// 	  //printf("id seq: %s\n", id_seq);
+// 	  
+// 	  qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end);
+// 
+// 	  // ---------------- T E S T ------------------	
+// 	  //qc_hash_insert_alignment(qc_hash_p, id_seq_test, tid, start_coordinate, seq_length);
+// 	  // ---------------- T E S T ------------------	  
+// 	}
+// 
+// 	//if (time_flag) { start_timer(t1_coverage); }
+// 	
+// 	if (gff_data_batch_in_region(bam_data_batch_p, gff_data_p) != 0) {
+// 	    //printf("\nstart_position: %i\n", bam_data_batch_list_item_p->batch_p->start_positions[0]);
+// 	    //printf("end_position: %i\n", bam_data_batch_list_item_p->batch_p->last_alignments_position);
+// 	    //printf("chromosome: %i, region_start: %i, region_end: %i\n", gff_data_p->gff_regions_p[gff_data_p->actual_region].chromosome, gff_data_p->gff_regions_p[gff_data_p->actual_region].start, gff_data_p->gff_regions_p[gff_data_p->actual_region].end);
+// 	    //printf("gff_data_batch_in_region: %i\n", gff_data_batch_in_region(bam_data_batch_list_item_p->batch_p, gff_data_p));
+// 	  bam_coverage_compute(bam_data_batch_p, bam_chromosome_coverage, gff_data_p, output_directory, input_filename, cpu_num_threads);
+// 	}
+// 	
+// 	//if (time_flag) { stop_timer(t1_coverage, t2_coverage, coverage_time); }
+// 	//printf("total coverage time       (s): \t%10.5f\n", 0.000001 * coverage_time);
+// 	//printf("write time                (s): \t%10.5f\n", 0.000001 * write_time);
+//       
+// 	if (time_flag) { stop_timer(t1_cpu, t2_cpu, cpu_time); }
+// 
+// 	sprintf(log_message, "Thread-CPU:...processing for batch %i done !\n", bam_data_batch_list_item_p->id);
+// 	LOG_DEBUG(log_message);
+// 
+// 	// F R E E  R E S O U R C E S
+// printf("5 ---->\n"); 
+// 	// free the current batch item if all processing with the batch is performed
+// 	//bam_data_batch_list_item_free(bam_data_batch_list_item_p, true);
+// 	bam_data_batch_free((bam_data_batch_t*) bam_data_batch_list_item_p->data_p);
+// 	list_item_free(bam_data_batch_list_item_p);
+// 	//printf("Thread-CPU:...processing for batch %i done !\n", qc_batch_p->id); 
+// 	
+// 
+//       
+//       } // end if-else
+//  
       // ask again for reads server status
       //		
       //gpus_alive = bam_data_batch_list_get_producers(cpu_batch_list_p);
       gpus_alive = list_get_writers(cpu_batch_list_p);
-      
+printf("6 ---->\n");    
       // next batch...: the first in the list
       //
       //bam_data_batch_list_item_p = bam_data_batch_list_remove(cpu_batch_list_p);
       bam_data_batch_list_item_p = list_remove_item(cpu_batch_list_p);
-    
+printf("7 ---->\n");
   } // end of external while loop
 
   // ---------------- T E S T ------------------	
@@ -695,15 +725,15 @@ void* results_server(void* params_p) {
 	bam_qc_report.map_insertion_histogram[(bam_qc_batch_p->qc_alignment_p[k].counters[I] <= MAX_MAP_ERRORS_IN_HISTOGRAM) ? bam_qc_batch_p->qc_alignment_p[k].counters[I] : (MAX_MAP_ERRORS_IN_HISTOGRAM + 1)]++;
 	bam_qc_report.map_matching_histogram[(bam_qc_batch_p->qc_alignment_p[k].counters[EQUAL] <= MAX_MAP_ERRORS_IN_HISTOGRAM) ? bam_qc_batch_p->qc_alignment_p[k].counters[EQUAL] : (MAX_MAP_ERRORS_IN_HISTOGRAM + 1)]++;	
       }
-
+      
+      sprintf(log_message, "Thread-RESULTS: ....processing for batch %i done !\n",bam_qc_batch_p->id);
+      LOG_DEBUG(log_message);
+      
       // free ALL memory
       //
       bam_qc_batch_free(bam_qc_batch_p, false);
 
-      if (time_flag) { stop_timer(t1_result, t2_result, result_time); }		
-      
-      sprintf(log_message, "Thread-RESULTS: ....processing for batch %i done !\n",bam_qc_batch_p->id);
-      LOG_DEBUG(log_message);
+      if (time_flag) { stop_timer(t1_result, t2_result, result_time); }
     } //end of if-else
   
     // getting gpus and cpus thread status
@@ -799,7 +829,10 @@ void* results_server(void* params_p) {
 */
 
 void qc_bam_file(size_t batch_size, int batch_list_size, int gpu_num_threads, int gpu_num_blocks, int cpu_num_threads, int base_quality, int max_distance_size, char* input_filename, char* output_directory, char* gff_filename) {
- 
+
+/*  bam_data_core_t* d_core_data_aux_p;
+  CUDA_SAFE_CALL( cudaHostAlloc((void**) &d_core_data_aux_p, (unsigned int) (num_alignments + 1) * sizeof(bam_data_core_t), 0) );*/
+  
   // number of GPUs is obtained, and initializes the number of GPU threads 'alive'
   //
   int num_gpu_devices;
@@ -840,7 +873,7 @@ void qc_bam_file(size_t batch_size, int batch_list_size, int gpu_num_threads, in
 
   // multi-threads
   //  
-  bam_reader_t* bam_reader_p = bam_reader_new(input_filename, batch_size, base_quality, &bam_data_batch_list_gpu, LIST_INSERT_MODE);
+  bam_reader_t* bam_reader_p = bam_reader_by_batch_new(input_filename, batch_size, base_quality, &bam_data_batch_list_gpu, LIST_INSERT_MODE);
   bam_reader_start(bam_reader_p);
   //num_alignments = bam_reader_join(bam_reader_p);
 

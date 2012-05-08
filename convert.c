@@ -35,7 +35,7 @@ void convert_bam_to_sam(char* bam_input, char* sam_input) {
 
   //open BAM file for read
   if (time_flag) { start_timer(t1_convert); }
-  bam_file_t* bam_file_p =  bam_fopen(bam_input, NULL, "r");
+  bam_file_t* bam_file_p =  bam_fopen_mode(bam_input, NULL, "r");
 
   //open SAM file for write, SAM file is a text file!!!
   FILE* sam_fd = fopen(sam_input, "w");
@@ -163,7 +163,7 @@ void convert_sam_to_bam(char* sam_input, char* bam_input) {
   tamFile sam_fd = sam_open(sam_input);
   
   //open BAM file for write 
-  bam_file_t* bam_file_p =  bam_fopen(bam_input, NULL, "w"); 
+  bam_file_t* bam_file_p =  bam_fopen_mode(bam_input, NULL, "w");
 
   //read header from SAM file
   bam_header_t* bam_header_p = sam_header_read(sam_fd);
