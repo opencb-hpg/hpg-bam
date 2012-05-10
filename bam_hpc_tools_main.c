@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
   char* dataset_input = NULL;  
   
   // variables to store sort parameters
-  int sort_by_id_flag;
+  int sort_by_id_flag = 1;
   
   // variables to store filter parameters
   int max_num_hits = DEFAULT_MAX_NUM_HITS;

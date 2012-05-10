@@ -293,6 +293,7 @@ void str_coverage_matrix_init() {
     str_coverage_matrix[i] = (char*) calloc(strlen_coverage_matrix[i], sizeof(char));
     nt_coverage_to_string_(str_coverage_matrix[i], i);
   }
+
 }
 
 /* **************************************************************

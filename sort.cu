@@ -67,12 +67,12 @@ void sort_bam_file(size_t batch_size, char* input_filename, char* output_directo
   char input_shortname[MAX_FULL_PATH_LENGTH];
   char output_filename[MAX_FULL_PATH_LENGTH];
   char** split_filename = (char**) calloc(NUM_OF_CHROMOSOMES, sizeof(char*));
-  
+
   get_filename_from_path(input_filename, input_shortname);
   sprintf(output_filename, "%s/%s%s", output_directory, input_shortname, SORTED_FILE_SUFFIX);
 
   alignments_list_t* list_p = alignments_list_new(NUM_OF_CHROMOSOMES); 
-  
+
   // first phase: one-reader vs multi-writers
   // calling threads to read alignments from file and write back to file (one per chromosome)
   bam_reader_t* bam_first_reader_p = bam_reader_new(input_filename, batch_size, 0, list_p, CHROMOSOME_MODE, NO_SORT, ALL_CHROMOSOMES);	//base_quality = 0
@@ -150,7 +150,7 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
   
   get_filename_from_path(input_filename, input_shortname);
   sprintf(output_filename, "%s/%s%s", output_directory, input_shortname, SORTED_FILE_SUFFIX);
-
+ 
   alignments_list_t* list_p = alignments_list_new(NUM_OF_CHROMOSOMES); 
   
   // first phase: one-reader vs multi-writers
@@ -195,17 +195,18 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
 
   bam_writer_start(bam_sorted_writer_p);
 
-  for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+  for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {      
       bam_split_reader_p = bam_reader_new(split_filename[i], batch_size, 0, list_p, SEQUENTIAL_MODE, SORT_BY_POSITION, i);
+      printf("creating reader %i\n", i);
       bam_reader_start(bam_split_reader_p);
+      printf("starting reader %i\n", i);
       num_aligments_read = bam_reader_join(bam_split_reader_p);
       //bam_reader_free(bam_split_reader_p);
   }
 
   bam_reader_alive = 0;
-  
   bam_writer_join(bam_sorted_writer_p);	
-  
+
   // delete bam files per chromosome
   for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
       remove(split_filename[i]);

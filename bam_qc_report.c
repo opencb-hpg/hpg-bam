@@ -53,7 +53,7 @@ void generate_report(bam_qc_report_t bam_qc_report, char* inputfilename, int bas
 	get_filename_from_path(inputfilename, in_shortname);
 	
 	str_valid_suffix = (valid) ? (char*) VALID_ALIGNMENT_FILE_SUFFIX : (char*)  INVALID_ALIGNMENT_FILE_SUFFIX;
-	
+
 	// print text report
 	//
 	sprintf(data_filename, "%s/%s%s%s", report_directory, in_shortname, QC_SUFFIX, str_valid_suffix);
@@ -101,7 +101,8 @@ void print_text_report_file(bam_qc_report_t bam_qc_report, int base_quality, cha
   fprintf(fd, "\nProcessed file  : %s\n", inputfilename);
   fprintf(fd, "\nNumber of alignments  : %li\n", bam_qc_report.num_alignments);
   fprintf(fd, "\nMean alignment length  : %li\n", bam_qc_report.mean_alignment_length);
-  fprintf(fd, "\nMean alignment quality: %i\n", (bam_qc_report.mean_map_quality - base_quality));
+  //fprintf(fd, "\nMean alignment quality: %i\n", (bam_qc_report.mean_map_quality - base_quality));
+  fprintf(fd, "\nMean alignment quality: %i\n", bam_qc_report.mean_map_quality);
   fprintf(fd, "\nStrand 0/1  : %3.2f/%3.2f\n", 100.0 * (bam_qc_report.num_alignments - bam_qc_report.strand_counter) / bam_qc_report.num_alignments, 100.0 * bam_qc_report.strand_counter / bam_qc_report.num_alignments);  
   fprintf(fd, "\nMean distance between paired ends: %ld\n", bam_qc_report.mean_paired_end_distance);
   fprintf(fd, "\nNumber of covered nts: %ld\n", nts_with_coverage);			//Global variable
@@ -464,64 +465,130 @@ qc_graph_t* set_qc_graph_default_values(qc_graph_t* qc_graph) {
 // generate_gnuplot_image
 //-----------------------------------------------------
 
+// void generate_gnuplot_image(qc_graph_t qc_graph, char* data_filename, char* graph_filename) {
+// 
+// 	// lines specifying input data and output graph are declared and filled
+// 	//
+// 	char line[MAX_FULL_PATH_LENGTH];
+// 	
+// 	// graph is parametrized based on qc_graph options and plotted
+// 	//
+// 	FILE *graph_fd = popen("gnuplot -persist","w");
+// 
+// 	if (graph_fd == NULL) {
+// 	  printf("ERROR opening pipe\n");
+// 	}
+// 
+// 	sprintf(line, "set output '%s'\n", graph_filename);
+// 	fprintf(graph_fd, line);
+// 	fprintf(graph_fd, "set terminal png nocrop enhanced font arial 10 size 640,360\n");
+// 	sprintf(line, "set ylabel '%s'\n", qc_graph.ylabel);
+// 	fprintf(graph_fd, line);
+// 	sprintf(line, "set xlabel '%s'\n", qc_graph.xlabel);
+// 	fprintf(graph_fd, line);
+// 	fprintf(graph_fd, "set ytics border in scale 1,0.5 mirror norotate  offset character 0, 0, 0\n");
+// 	sprintf(line, "set title '%s'\n", qc_graph.title);
+// 	fprintf(graph_fd, line);	
+// 
+// 	
+// 	if (qc_graph.x_autoscale == 1) {
+// 	    fprintf(graph_fd, "set autoscale x\n");    
+// 	} else {
+// 	    sprintf(line, "set xrange [ %i : %i ] noreverse nowriteback\n", qc_graph.x_start, qc_graph.x_end);
+// 	    fprintf(graph_fd, line);
+// 	}
+// 
+// 	if (qc_graph.y_autoscale == 1) {
+// 	    fprintf(graph_fd, "set autoscale y\n");    
+// 	} else {
+// 	    sprintf(line, "set yrange [ %i : %i ] noreverse nowriteback\n", qc_graph.x_start, qc_graph.x_end);
+// 	    fprintf(graph_fd, line);
+// 	}
+// 
+// 	sprintf(line, "set lmargin '%i'\n", qc_graph.lmargin);
+// 	fprintf(graph_fd, line);
+// 	sprintf(line, "set rmargin '%i'\n", qc_graph.rmargin);
+// 	fprintf(graph_fd, line);
+// 	sprintf(line, "set tmargin '%i'\n", qc_graph.tmargin);
+// 	fprintf(graph_fd, line);
+// 	sprintf(line, "set bmargin '%i'\n", qc_graph.bmargin);
+// 	fprintf(graph_fd, line);
+// 
+// 	sprintf(line, "plot ");
+// 	for (int i=0; i<qc_graph.num_y_columns; i++) {
+// 	    sprintf(line, "%s%s '%s' using %i:%i title '%s' with %s", line, (i==0 ? "" : ", "), data_filename, qc_graph.x_column, qc_graph.y_columns[i], qc_graph.y_titles[i], qc_graph.type);
+// //    	    sprintf(line, "%s%s '%s' using %i:%i notitle with %s", line, (i==0 ? "" : ", "), data_filename, qc_graph.x_column, qc_graph.y_columns[i], qc_graph.type);
+// // 	    sprintf(line, "%s%s '%s' using %i:%i %s with %s", line, (i==0 ? "" : ", "), data_filename, qc_graph.x_column, qc_graph.y_columns[i], (strcmp(qc_graph.y_titles[i], "")!=0 ? "title 'TITULO'" : "notitle"), qc_graph.type);
+// 	}	
+// 	fprintf(graph_fd, line);
+// 
+// 	pclose(graph_fd); 
+// }
+
 void generate_gnuplot_image(qc_graph_t qc_graph, char* data_filename, char* graph_filename) {
+    // lines specifying input data and output graph are declared and filled
+    char line[MAX_FULL_PATH_LENGTH];
+    
+    char gnuplot_filename[1024];
+    sprintf(gnuplot_filename, "%s.gnuplot", graph_filename);
 
-	// lines specifying input data and output graph are declared and filled
-	//
-	char line[MAX_FULL_PATH_LENGTH];
-	
-	// graph is parametrized based on qc_graph options and plotted
-	//
-	FILE *graph_fd = popen("gnuplot -persist","w");
+    // open the file for writing gnuplot lines
+    FILE* graph_fd = fopen(gnuplot_filename, "w");
+    
+    if (graph_fd == NULL) {
+        LOG_FATAL("Opening of file descriptor for gnuplot execution failed\n");
+        return;
+    }
 
-	if (graph_fd == NULL) {
-	  printf("ERROR opening pipe\n");
-	}
-	
-	sprintf(line, "set output '%s'\n", graph_filename);
-	fprintf(graph_fd, line);	
-	fprintf(graph_fd, "set terminal png nocrop enhanced font arial 10 size 640,360\n");
-	sprintf(line, "set ylabel '%s'\n", qc_graph.ylabel);
-	fprintf(graph_fd, line);
-	sprintf(line, "set xlabel '%s'\n", qc_graph.xlabel);
-	fprintf(graph_fd, line);
-	fprintf(graph_fd, "set ytics border in scale 1,0.5 mirror norotate  offset character 0, 0, 0\n");
-	sprintf(line, "set title '%s'\n", qc_graph.title);
-	fprintf(graph_fd, line);	
+    sprintf(line, "set output '%s'\n", graph_filename);
+    fprintf(graph_fd, line);
+    fprintf(graph_fd, "set terminal png nocrop enhanced font arial 10 size 640,360\n");
+    sprintf(line, "set ylabel '%s'\n", qc_graph.ylabel);
+    fprintf(graph_fd, line);
+    sprintf(line, "set xlabel '%s'\n", qc_graph.xlabel);
+    fprintf(graph_fd, line);
+    fprintf(graph_fd, "set ytics border in scale 1,0.5 mirror norotate  offset character 0, 0, 0\n");
+    sprintf(line, "set title '%s'\n", qc_graph.title);
+    fprintf(graph_fd, line);
 
-	
-	if (qc_graph.x_autoscale == 1) {
-	    fprintf(graph_fd, "set autoscale x\n");    
-	} else {
-	    sprintf(line, "set xrange [ %i : %i ] noreverse nowriteback\n", qc_graph.x_start, qc_graph.x_end);
-	    fprintf(graph_fd, line);
-	}
+    if (qc_graph.x_autoscale == 1) {
+        fprintf(graph_fd, "set autoscale x\n");
+    } else {
+        sprintf(line, "set xrange [ %i : %i ] noreverse nowriteback\n", qc_graph.x_start, qc_graph.x_end);
+        fprintf(graph_fd, line);
+    }
 
-	if (qc_graph.y_autoscale == 1) {
-	    fprintf(graph_fd, "set autoscale y\n");    
-	} else {
-	    sprintf(line, "set yrange [ %i : %i ] noreverse nowriteback\n", qc_graph.x_start, qc_graph.x_end);
-	    fprintf(graph_fd, line);
-	}
+    if (qc_graph.y_autoscale == 1) {
+        fprintf(graph_fd, "set autoscale y\n");
+    } else {
+        sprintf(line, "set yrange [ %i : %i ] noreverse nowriteback\n", qc_graph.x_start, qc_graph.x_end);
+        fprintf(graph_fd, line);
+    }
 
-	sprintf(line, "set lmargin '%i'\n", qc_graph.lmargin);
-	fprintf(graph_fd, line);
-	sprintf(line, "set rmargin '%i'\n", qc_graph.rmargin);
-	fprintf(graph_fd, line);
-	sprintf(line, "set tmargin '%i'\n", qc_graph.tmargin);
-	fprintf(graph_fd, line);
-	sprintf(line, "set bmargin '%i'\n", qc_graph.bmargin);
-	fprintf(graph_fd, line);
+    sprintf(line, "set lmargin '%i'\n", qc_graph.lmargin);
+    fprintf(graph_fd, line);
+    sprintf(line, "set rmargin '%i'\n", qc_graph.rmargin);
+    fprintf(graph_fd, line);
+    sprintf(line, "set tmargin '%i'\n", qc_graph.tmargin);
+    fprintf(graph_fd, line);
+    sprintf(line, "set bmargin '%i'\n", qc_graph.bmargin);
+    fprintf(graph_fd, line);
 
-	sprintf(line, "plot ");
-	for (int i=0; i<qc_graph.num_y_columns; i++) {
-	    sprintf(line, "%s%s '%s' using %i:%i title '%s' with %s", line, (i==0 ? "" : ", "), data_filename, qc_graph.x_column, qc_graph.y_columns[i], qc_graph.y_titles[i], qc_graph.type);
-//    	    sprintf(line, "%s%s '%s' using %i:%i notitle with %s", line, (i==0 ? "" : ", "), data_filename, qc_graph.x_column, qc_graph.y_columns[i], qc_graph.type);
-// 	    sprintf(line, "%s%s '%s' using %i:%i %s with %s", line, (i==0 ? "" : ", "), data_filename, qc_graph.x_column, qc_graph.y_columns[i], (strcmp(qc_graph.y_titles[i], "")!=0 ? "title 'TITULO'" : "notitle"), qc_graph.type);
-	}	
-	fprintf(graph_fd, line);
+    sprintf(line, "plot ");
 
-	pclose(graph_fd); 
+    for (int i = 0; i < qc_graph.num_y_columns; i++) {
+        sprintf(line, "%s%s '%s' using %i:%i title '%s' with %s", line, (i == 0 ? "" : ", "), data_filename, qc_graph.x_column, qc_graph.y_columns[i], qc_graph.y_titles[i], qc_graph.type);
+    }
+    fprintf(graph_fd, line);
+
+    fclose(graph_fd);    
+    
+    // build the command line by calling gnuplot followed by is instruction file
+    char cmd[1024];
+    sprintf(cmd, "gnuplot %s;", gnuplot_filename);
+    
+    //execute command line: gnuplot filename.gnuplot
+    system(cmd);
 }
 
 //-----------------------------------------------------
