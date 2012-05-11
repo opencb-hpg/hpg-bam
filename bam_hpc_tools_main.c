@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
   int argc_with_file_options = 0;
   char** argv_with_file_options = NULL;
   char** argv_from_file_options = NULL;
-	
+
   for(int i=0; i<argc; i++) {
     if(strcmp(argv[i], "--conf") == 0) {
       
@@ -545,7 +545,7 @@ int main(int argc, char **argv) {
 	  LOG_FATAL("Default case of parameters parsing. Aborting program");
 	}
   }
- 
+
   // free argv_with_file_options
   if (argc_with_file_options == 0) {
     for(int i=0; i<argc_with_file_options; i++) {
@@ -683,11 +683,11 @@ int main(int argc, char **argv) {
   if (cpu_num_threads == DEFAULT_CPU_NUM_THREADS) {
     cpu_num_threads = get_optimal_cpu_num_threads();  
   }
-
+ 
   if (gpu_num_threads == DEFAULT_GPU_NUM_THREADS) {
     gpu_num_threads = get_optimal_gpu_num_threads();
   }
- 
+
   // start measuring time after options
   if (time_flag) { start_timer(t1_total); }
   
