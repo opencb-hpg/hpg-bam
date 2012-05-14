@@ -10,11 +10,11 @@
 #include "log.h"
 #include "cuda_commons.h"
 
-#define NUMBER_OF_NTS_IN_GENOME 	3200000000
-#define WINDOW_SIZE_FOR_COVERAGE_UNIFORMITY	1000
+#define NUMBER_OF_NTS_IN_GENOME  3200000000
+#define WINDOW_SIZE_FOR_COVERAGE_UNIFORMITY 1000
 
 /*
-	qc kernels implementation on CPU
+     qc kernels implementation on CPU
 */
 
 void cpu_bam_qc_basic_stats(bam_data_core_t* core_data_p, int* strand_counter_p, int* map_quality_p, int* alignment_length_p, int num_alignments, int cpu_num_threads);

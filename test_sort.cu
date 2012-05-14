@@ -5,8 +5,7 @@
 #include <thrust/copy.h>
 #include <cstdlib>
 
-int main(void)
-{
+int main(void) {
     // generate 32M random numbers on the host
     thrust::host_vector<int> h_vec(32 << 20);
     thrust::generate(h_vec.begin(), h_vec.end(), rand);

@@ -24,7 +24,7 @@ CUINCLUDES = -I. -I./samtools-0.1.18/ -I$(BAM_LIB) -I$(COMMONS_LIB) -I$(COMMONS_
 
 NVCC = nvcc
 NVCCFLAGS = -g -G -Xptxas -v  -arch=sm_20 -Xcompiler " -fopenmp"
-#NVCCFLAGS = -g -G -Xptxas -v  -arch=sm_12
+#NVCCFLAGS = -g -G -Xptxas -v  -arch=sm_12 -DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP -lgomp
 
 all: $(ALL)
 

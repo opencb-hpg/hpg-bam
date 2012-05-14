@@ -3,7 +3,7 @@
 #define SORT_H_
 
 // #include "bam.h"
-// 
+//
 // #include "aligner_dataset.h"
 // #include "aligner_dataset_file.h"
 // #include "commons.h"
@@ -12,15 +12,15 @@
 // #include "system_utils.h"
 #include "cuda_commons.h"
 
-#define SORTED_FILE_SUFFIX	".sorted"
+#define SORTED_FILE_SUFFIX ".sorted"
 
 /*
       SORT BAM FILE
 */
 
 void sort_bam_file(size_t batch_size, char* input_filename, char* output_directory);
-//extern "C" { 
-  void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_directory); 
+//extern "C" {
+void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_directory);
 //}
 
 /*

@@ -8,7 +8,6 @@
 #include "log.h"
 #include "cuda_commons.h"
 
-
 /**
 *  public functions to sort structures
 */
@@ -17,14 +16,14 @@ void sort_alignments_by_position(alignments_list_t* alignments_list_p, int chrom
 void sort_dataset_list_by_id(aligner_dataset_list_t* aligner_dataset_list_p);
 
 /*
-	function to call thrust sorting for a single one-dimension vector
+ function to call thrust sorting for a single one-dimension vector
 */
 
 //void sort_vector(int* vector, int length);
-  
+
 
 /*
-	function to call thrust sorting for a key-value pair, element count is needed
+ function to call thrust sorting for a key-value pair, element count is needed
 */
 
 //void sort_key_value(int* keys, int* values, int length);

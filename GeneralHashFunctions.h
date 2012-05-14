@@ -16,17 +16,13 @@
  **************************************************************************
 */
 
-
-
 #ifndef INCLUDE_GENERALHASHFUNCTION_C_H
 #define INCLUDE_GENERALHASHFUNCTION_C_H
-
 
 #include <stdio.h>
 
 
 typedef unsigned int (*hash_function)(char*, unsigned int len);
-
 
 unsigned int RSHash  (char* str, unsigned int len);
 unsigned int JSHash  (char* str, unsigned int len);
@@ -40,5 +36,4 @@ unsigned int BPHash  (char* str, unsigned int len);
 unsigned int FNVHash (char* str, unsigned int len);
 unsigned int APHash  (char* str, unsigned int len);
 
-
-#endif
+#endif  /* INCLUDE_GENERALHASHFUNCTION_C_H */
