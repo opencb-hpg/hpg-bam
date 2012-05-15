@@ -31,28 +31,15 @@ extern "C" {
 
 #define BLOCK_SIZE 16
 
-
-/*************************************************************
- *
- * sort.cu
- * variables and structures
- *
- ************************************************************/
+/* **********************************************
+ *    		Global variables  		*
+ * *********************************************/
 
 int bam_reader_alive = 1;
 
-/*************************************************************
- *
- * functions
- *
- ************************************************************/
-
-/*************************************************************
- *
- * function sort_bam_file
- * sorts the input bam file
- *
- ************************************************************/
+/* ******************************************************
+ *    		Function implementations  		*
+ * *****************************************************/
 
 void sort_bam_file(size_t batch_size, char* input_filename, char* output_directory) {
     int num_aligments_read;
@@ -129,13 +116,6 @@ void sort_bam_file(size_t batch_size, char* input_filename, char* output_directo
     alignments_list_free(list_p);
 }
 
-/*************************************************************
- *
- * function sort_bam_file
- * sorts the input bam file
- *
- ************************************************************/
-
 void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_directory) {
     int num_aligments_read;
     char input_shortname[MAX_FULL_PATH_LENGTH];
@@ -210,9 +190,6 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
     alignments_list_free(list_p);
 }
 
-
-
-
 /*
 // merge implementation
 void sort_bam_file(char* bam_input, char* output_directory) {  // test for performance measurements
@@ -281,33 +258,6 @@ void sort_bam_file(char* bam_input, char* output_directory) {  // test for perfo
 //  }
 
 }*/
-
-/*************************************************************
- *
- * function sort_sam_file
- * sorts the input sam file
- *
- ************************************************************/
-
-void sort_sam_file(char* input_filename, char* output_directory) {
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, 0);
-    if (!prop.canMapHostMemory) {
-        LOG_FATAL("device does not support MapHostMemory\n");
-    }
-
-    //¿TODO?
-}
-
-/**
- *  @brief Sorts an alignment dataset.
- *  @param dataset_input filename containing the dataset to be mapped
- *  @param output_directory output directory where sorted dataset will be placed
- *  @return void
- *
- *  This function sorts a dataset file and puts the resulting sorted dataset in the given
- *  ouput directory
- */
 
 void sort_dataset_by_id(char* dataset_input, char* output_directory) {
     unsigned int read_lines = 0;

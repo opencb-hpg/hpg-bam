@@ -39,7 +39,6 @@
 [--gpu-num-blocks <num_blocks>] [--gpu-num-threads <num_threads>] [--gpu-num-devices <num_devices>] [--cpu-num-threads <num_threads>] \
 [--batch-size] [--batch-list-size] [--log-level <1-5>] [--log-file <log_filename>] [--verbose] [--t | --time] \n"
 
-
 /* **********************************************
  *      	Global variables    		*
  * **********************************************/
@@ -735,7 +734,7 @@ int main(int argc, char **argv) {
         printf("\n");
         printf("number of alignments     : \t%10i\n\n", num_alignments);
         printf("number of batches        : \t%10i\n\n", number_of_batchs);
-        printf("mean alignments per batch  : \t%10.2f\n", 1.0 * num_alignments / number_of_batchs);
+        printf("mean alignments per batch  : \t%10.2f\n", (number_of_batchs == 0) ? 0 : 1.0 * num_alignments / number_of_batchs);
 
         printf("total time           (s): \t%10.5f\n", 0.000001 * total_time);
         printf("\n");

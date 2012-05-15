@@ -118,7 +118,7 @@ void qc_hash_unlock(qc_hash_t* qc_hash_p);
 *  @param pairend_end flag of paired-end
 *  @return void
 *  
-*  Locks a qc hash
+*  Inserts an aligment into the qc hash
 */
 void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end);
 

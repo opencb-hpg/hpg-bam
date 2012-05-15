@@ -3,12 +3,10 @@
 #include <algorithm>
 #include <vector>
 
-//#ifdef THRUST-GPU
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/sort.h>
 #include <thrust/copy.h>
-//#endif
 
 #include "bam_commons.h"
 
@@ -16,22 +14,28 @@ extern "C" {
     #include "sort_thrust.h"
 }
 
-//------------------------------------------------------------------------------------
-// function prototypes
-//------------------------------------------------------------------------------------
+/* ******************************************************
+ *    		Private functions (CPU/GPU) 		*
+ * *****************************************************/
 
-#ifdef THRUST-GPU
-    void sort_vector(int* vector, int length);
-    void sort_key_value(thrust::host_vector<int>* h_key_p, thrust::host_vector<int>* h_value_p, int length);
-#else
-    void sort_key_value(int* keys, int* values, int length);
+#ifdef THRUST-GPU	//Compute in GPU
+
+void sort_vector(int* vector, int length);
+void sort_key_value(thrust::host_vector<int>* h_key_p, thrust::host_vector<int>* h_value_p, int length);
+
+#else			//Compute in CPU
+
+void sort_key_value(int* keys, int* values, int length);
+
 #endif
 
-//------------------------------------------------------------------------------------
-// public function to call thrust sorting for a key-value pair
-//------------------------------------------------------------------------------------
+void sort_key_value_char(char** keys, int* values, int length);
 
-#ifdef THRUST-GPU
+/* **********************************************************************
+ *    		Public functions implementations (CPU/GPU) 		*
+ * *********************************************************************/
+
+#ifdef THRUST-GPU	//Compute in GPU
 
 void sort_alignments_by_position(alignments_list_t* list_p, int chromosome) {
     if (chromosome == ALL_CHROMOSOMES) {
@@ -43,7 +47,7 @@ void sort_alignments_by_position(alignments_list_t* list_p, int chromosome) {
     }
 }
 
-#else
+#else			//Compute in CPU
 
 void sort_alignments_by_position(alignments_list_t* list_p, int chromosome) {
     if (chromosome == ALL_CHROMOSOMES) {
@@ -57,17 +61,21 @@ void sort_alignments_by_position(alignments_list_t* list_p, int chromosome) {
 
 #endif
 
-#ifdef THRUST-GPU
+void sort_dataset_list_by_id(aligner_dataset_list_t* list_p) {
+    sort_key_value_char(list_p->seq_id_p, list_p->indices_p, list_p->num_lines);
+}
 
-//------------------------------------------------------------------------------------
-// function to call thrust sorting for a single one-dimension vector
-//------------------------------------------------------------------------------------
+/* **********************************************************************
+ *    		Private functions implementations (CPU/GPU) 		*
+ * *********************************************************************/
+
+#ifdef THRUST-GPU	//GPU implementation
 
 void sort_vector(int* vector, int length) {
-
     thrust::host_vector<int> h_vec(length);
     for (int i = 0 ; i < length ; i++) h_vec[i] = vector[i];
 
+    //copy to device vector
     thrust::device_vector<int> d_vec = h_vec;
 
     if (time_flag) {
@@ -77,14 +85,12 @@ void sort_vector(int* vector, int length) {
     if (time_flag) {
         stop_timer(t1_sort, t2_sort, sort_time);
     }
-
+    
+    //copy back to host vector
     thrust::copy(d_vec.begin(), d_vec.end(), h_vec.begin());
 }
 
-//------------------------------------------------------------------------------------
-//  function to call thrust sorting for a key-value pair, element count is needed
-//------------------------------------------------------------------------------------
-
+//overloaded method: implementation with vectors
 void sort_key_value(int* keys, int* values, int length) {
     thrust::host_vector<int> h_key(length);
     thrust::host_vector<int> h_value(length);
@@ -108,69 +114,17 @@ void sort_key_value(int* keys, int* values, int length) {
     thrust::copy(d_value.begin(), d_value.end(), h_value.begin());
 }
 
+//overloaded method: implementation with thrust::host_vector
 void sort_key_value(thrust::host_vector<int>* h_key, thrust::host_vector<int>* h_value, int length) {
-//void sort_key_value(thrust::host_vector<int> h_key, thrust::host_vector<int> h_value, int length) {
-
     h_key->resize(length);
     h_value->resize(length);
 
-//  thrust::device_vector<int> d_key(length);// = h_key;
-//  thrust::device_vector<int> d_value(length);// = h_value;
     thrust::device_vector<int> d_key = *h_key;
     thrust::device_vector<int> d_value = *h_value;
 
     printf("********** h_key.size() = %i, length = %i\n", h_key->size(), length);
 
     int key, value;
-    /*
-      if (length>1)
-      {
-        int n=length;
-        thrust::device_vector<int> d_key_1(n);
-        thrust::device_vector<int> d_value_1(n);
-        for(int i=0; i<n; i++) {
-          d_key_1[i] = h_key[i];//n-i;
-          d_value_1[i] = h_value[i];//i;
-
-          d_key[i] = h_key[i];//n-i;
-          d_value[i] = h_value[i];//i;
-
-        }
-
-        thrust::stable_sort_by_key(d_key_1.begin(), d_key_1.end(), d_value_1.begin());
-
-        FILE* fd_aux1 = fopen("/tmp/after_sort_1.txt", "w");
-        fprintf(fd_aux1, "----- length=%i\n", n);
-        for(int i=0 ; i<n ; i++) {
-          key = d_key_1[i];
-          value = d_value_1[i];
-          fprintf(fd_aux1, "key: %i, value: %i\n", key, value);
-        }
-        fclose(fd_aux1);
-      }
-    */
-
-//   if (length>1) {
-//     FILE* fd_aux1 = fopen("/tmp/before_sort.txt", "w");
-//     fprintf(fd_aux1, "----- length=%i\n", length);
-//     for(int i=0 ; i<length ; i++) {
-//       key = h_key[i];
-//       value = h_value[i];
-//       fprintf(fd_aux1, "key: %i, value: %i\n", key, value);
-//     }
-//     fclose(fd_aux1);
-//   }
-
-//   if (length>1) {
-//     FILE* fd_aux3 = fopen("/tmp/before_sort_device.txt", "w");
-//     fprintf(fd_aux3, "----- length=%i\n", length);
-//     for(int i=0 ; i<length ; i++) {
-//       key = d_key[i];
-//       value = d_value[i];
-//       fprintf(fd_aux3, "key: %i, value: %i\n", key, value);
-//     }
-//     fclose(fd_aux3);
-//   }
 
     if (time_flag) {
         start_timer(t1_sort);
@@ -180,38 +134,17 @@ void sort_key_value(thrust::host_vector<int>* h_key, thrust::host_vector<int>* h
         stop_timer(t1_sort, t2_sort, sort_time);
     }
 
-//   if (length>1) {
-//     FILE* fd_aux4 = fopen("/tmp/after_sort_device.txt", "w");
-//     fprintf(fd_aux4, "----- length=%i\n", length);
-//     for(int i=0 ; i<length ; i++) {
-//       key = d_key[i];
-//       value = d_value[i];
-//       fprintf(fd_aux4, "key: %i, value: %i\n", key, value);
-//     }
-//     fclose(fd_aux4);
-//   }
-
     thrust::copy(d_key.begin(), d_key.end(), (*h_key).begin());
     thrust::copy(d_value.begin(), d_value.end(), (*h_value).begin());
-
-//   if (length>1) {
-//     FILE* fd_aux2 = fopen("/tmp/after_sort.txt", "w");
-//     fprintf(fd_aux2, "----- length=%i\n", length);
-//     for(int i=0 ; i<length ; i++) {
-//       key = (*h_key)[i];
-//       value = (*h_value)[i];
-//       fprintf(fd_aux2, "key: %i, value: %i\n", key, value);
-//     }
-//     fclose(fd_aux2);
-//   }
-
 }
 
-#else
+#else			//CPU implementation
 
 void sort_key_value(int* keys, int* values, int length) {
     thrust::host_vector<int> h_key(length);
     thrust::host_vector<int> h_value(length);
+
+    //fill the host vector
     for (int i = 0 ; i < length ; i++) {
         h_key[i] = keys[i];
         h_value[i] = values[i];
@@ -225,15 +158,12 @@ void sort_key_value(int* keys, int* values, int length) {
         stop_timer(t1_sort, t2_sort, sort_time);
     }
 
+    //fills back the original vector
     for (int i = 0 ; i < length ; i++) {
         keys[i] = h_key[i];
         values[i] = h_value[i];
     }
 }
-
-// void sort_key_value(int* keys, int* values, int length) {
-//   std::sort(keys, keys + length);  // using default comparison (operator <)
-// }
 
 #endif
 
@@ -266,12 +196,4 @@ void sort_key_value_char(char** keys, int* values, int length) {
     }
 }
 
-// void sort_key_value(int* keys, int* values, int length) {
-//   std::sort(keys, keys + length);  // using default comparison (operator <)
-// }
-
 #endif
-
-void sort_dataset_list_by_id(aligner_dataset_list_t* list_p) {
-    sort_key_value_char(list_p->seq_id_p, list_p->indices_p, list_p->num_lines);
-}
