@@ -147,9 +147,10 @@ void* qc_calc_server(void* params_p) {
 
     while ((bam_data_batch_list_item_p = list_remove_item(gpu_batch_list_p)) != NULL) {
         LOG_DEBUG("Thread-GPU: waiting for batch....\n");
-        //printf("reads_alive: %i, bam_data_batch_list_item_p is NULL: %i\n", reads_alive, (bam_data_batch_list_item_p == NULL));
 
-        //if (time_flag) { start_timer(t1_gpu); }
+        //if (time_flag) { 
+        //    start_timer(t1_gpu); 
+        //}
 
         if ((time_flag) && (gpus_standby_time == 0.0)) {
             stop_timer(t1_active_reader, t1_active_gpus, gpus_standby_time);
@@ -224,7 +225,9 @@ void* qc_calc_server(void* params_p) {
             }
         }
 
-        //if (time_flag) { stop_timer(t1_gpu, t2_gpu, gpu_time); }
+        //if (time_flag) { 
+        //    stop_timer(t1_gpu, t2_gpu, gpu_time); 
+        //}
 
         // create a new qc_batch object
         bam_qc_batch_p = (bam_qc_batch_t*) malloc(sizeof(bam_qc_batch_t));
@@ -238,16 +241,11 @@ void* qc_calc_server(void* params_p) {
         //bam_qc_batch_p->alignments_p = bam_data_batch_list_item_p->alignments_p;
 
         // and insert it into the bam_qc_batch_list
-        //
-        //bam_qc_batch_list_insert(bam_qc_batch_p, &bam_qc_batch_list);
         list_item_t* item_p = list_item_new(bam_qc_batch_p->id, 0, bam_qc_batch_p);
         list_insert_item(item_p, &bam_qc_batch_list);
-        //qc_batch_list_print(&qc_batch_list);
 
         // copy the the current batch item to the cpu batch list in order to perform CPU qc operations
-        //bam_data_batch_list_insert(bam_data_batch_list_item_p, cpu_batch_list_p);
         list_insert_item(bam_data_batch_list_item_p, cpu_batch_list_p);
-        //bam_data_batch_list_item_free(bam_data_batch_list_item_p, true);
 
         sprintf(log_message, "Thread-GPU:...processing for batch %i done !\n", bam_data_batch_list_item_p->id);
         LOG_DEBUG(log_message);
@@ -309,8 +307,7 @@ void* cpus_server(void* params_p) {
     // variables for coverage (regions data)
     bam_chromosome_coverage_t bam_chromosome_coverage[NUM_OF_CHROMOSOMES];
 
-    int j;
-    for (j = 0; j < NUM_OF_CHROMOSOMES; j++) {
+    for (int j = 0; j < NUM_OF_CHROMOSOMES; j++) {
         bam_chromosome_coverage_init(&bam_chromosome_coverage[j]);
     }
 
@@ -319,10 +316,6 @@ void* cpus_server(void* params_p) {
     int gpus_alive;
 
     gpus_alive = list_get_writers(cpu_batch_list_p);
-
-
-    // ---------------- T E S T ------------------
-    int test_counter_alignments = 0;
 
     while ((bam_data_batch_list_item_p = list_remove_item(cpu_batch_list_p)) != NULL) {
         if ((time_flag) && (cpus_standby_time == 0.0)) {
@@ -334,7 +327,6 @@ void* cpus_server(void* params_p) {
         LOG_DEBUG(log_message);
 
         // allocation memory for output results
-        //
         bam_data_batch_p = (bam_data_batch_t*) bam_data_batch_list_item_p->data_p;
         int num_alignments = bam_data_batch_p->num_alignments;
         int cpu_num_threads = input_p->cpu_num_threads;
@@ -361,13 +353,17 @@ void* cpus_server(void* params_p) {
             qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end);
         }
 
-        //if (time_flag) { start_timer(t1_coverage); }
+        //if (time_flag) { 
+        //    start_timer(t1_coverage); 
+        //}
 
         if (gff_data_batch_in_region(bam_data_batch_p, gff_data_p) != 0) {
             bam_coverage_compute(bam_data_batch_p, bam_chromosome_coverage, gff_data_p, output_directory, input_filename, cpu_num_threads);
         }
 
-        //if (time_flag) { stop_timer(t1_coverage, t2_coverage, coverage_time); }
+        //if (time_flag) { 
+        //    stop_timer(t1_coverage, t2_coverage, coverage_time); 
+        //}
 
         if (time_flag) {
             stop_timer(t1_cpu, t2_cpu, cpu_time);
@@ -394,7 +390,6 @@ void* cpus_server(void* params_p) {
     //    - Mean distance between paired ends
     //    - Histogram of mappings per reads
 
-    //unsigned int num_mappings_histogram[MAX_MAPPING_COUNT_IN_HISTOGRAM + 2];
     unsigned long mean_paired_end_distance = 0;
 
     if (time_flag) {
@@ -409,7 +404,7 @@ void* cpus_server(void* params_p) {
     }
 
     //free qc hash structure, gff data and chromosome coverage
-    for (j = 0; j < NUM_OF_CHROMOSOMES; j++) {
+    for (int j = 0; j < NUM_OF_CHROMOSOMES; j++) {
         bam_chromosome_coverage_clear(&bam_chromosome_coverage[j]);
     }
 
@@ -503,7 +498,6 @@ void* results_server(void* params_p) {
             bam_qc_report.strand_counter += bam_qc_batch_p->strand_counter_p[k];
             bam_qc_report.mean_map_quality += bam_qc_batch_p->map_quality_p[k];
             bam_qc_report.mean_alignment_length += bam_qc_batch_p->alignment_length_p[k];
-            //printf("processing bam qc batch p id: %i, strand (+): %i, map quality: %i, alignment length: %i\n", bam_qc_batch_p->id, bam_qc_batch_p->strand_counter_p[k], bam_qc_batch_p->map_quality_p[k], bam_qc_batch_p->alignment_length_p[k]);
         }
 
         for (int k = 0; k < bam_qc_batch_p->num_alignments; k++) {
@@ -515,7 +509,7 @@ void* results_server(void* params_p) {
 
         sprintf(log_message, "Thread-RESULTS: ....processing for batch %i done !\n", bam_qc_batch_p->id);
         LOG_DEBUG(log_message);
-        //printf("Thread-RESULTS: ....processing for batch %i done !\n",bam_qc_batch_p->id);
+
         // free ALL memory
         bam_qc_batch_free(bam_qc_batch_p, false);
 
@@ -525,7 +519,6 @@ void* results_server(void* params_p) {
 
 
         // getting gpus and cpus thread status
-        //
         pthread_mutex_lock(&gpus_thread_alive_lock);
         gpus_alive = gpus_thread_alive;
         pthread_mutex_unlock(&gpus_thread_alive_lock);
@@ -561,7 +554,6 @@ void* results_server(void* params_p) {
     // and finally, print qc report, data files and graphs
     // when cpu data is ready (cpus_alive = 0)
     while (cpus_alive > 0) {
-        //printf("waiting....\n");
         sched_yield();
 
         usleep(10000);
@@ -631,13 +623,12 @@ void qc_bam_file(size_t batch_size, int batch_list_size, int gpu_num_threads, in
     list_init("bam_qc_batch_list", ((num_gpu_devices > 0) ? num_gpu_devices : 1), batch_list_size, &bam_qc_batch_list);
 
     //initializing qc_mapping_counter
-    qc_mapping_counter_t qc_mapping_counter; //PASS TO THE CPU AND RESULTS THREADS AND BUILD THE MUTEX HANDLERS
+    qc_mapping_counter_t qc_mapping_counter;
     qc_mapping_counter_init(&qc_mapping_counter);
 
     //multi-threads
     bam_reader_t* bam_reader_p = bam_reader_by_batch_new(input_filename, batch_size, base_quality, &bam_data_batch_list_gpu, LIST_INSERT_MODE);
     bam_reader_start(bam_reader_p);
-    //num_alignments = bam_reader_join(bam_reader_p);
 
     //some local variables
     void* r;

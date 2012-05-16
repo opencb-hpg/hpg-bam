@@ -5,8 +5,8 @@
 #include "aligner_dataset.h"
 #include "chrom_alignments.h"
 #include "commons.h"
-#include "log.h"
 #include "cuda_commons.h"
+#include "log.h"
 
 /* **************************************
  *    		Functions  		*

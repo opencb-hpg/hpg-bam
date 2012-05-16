@@ -80,15 +80,13 @@ void sort_bam_file(size_t batch_size, char* input_filename, char* output_directo
     }
 
     // second phase: one-reader vs one-writer
-    //    one-reader is in charged of reading all segmented-files
-    //¿set counters to 0?
+    // one-reader is in charged of reading all segmented-files
     alignments_list_free(list_p);
     list_p = alignments_list_new(NUM_OF_CHROMOSOMES);
 
     bam_reader_t* bam_split_reader_p;
 
     bam_file_t* bam_file_p = bam_fopen(input_filename);
-    //bam_writer_t* bam_sorted_writer_p = bam_writer_new(output_filename, list_p, bam_first_reader_p->bam_file_p->bam_header_p, SEQUENTIAL_MODE, ALL_CHROMOSOMES);
     bam_writer_t* bam_sorted_writer_p = bam_writer_new(output_filename, list_p, bam_file_p->bam_header_p, SEQUENTIAL_MODE, ALL_CHROMOSOMES);
     bam_fclose(bam_file_p);
 
@@ -155,15 +153,13 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
     }
 
     // second phase: one-reader vs one-writer
-    //    one-reader is in charged of reading all segmented-files
-    //¿set counters to 0?
+    // one-reader is in charged of reading all segmented-files
     alignments_list_free(list_p);
     list_p = alignments_list_new(NUM_OF_CHROMOSOMES);
 
     bam_reader_t* bam_split_reader_p;
 
     bam_file_t* bam_file_p = bam_fopen(input_filename);
-    //bam_writer_t* bam_sorted_writer_p = bam_writer_new(output_filename, list_p, bam_first_reader_p->bam_file_p->bam_header_p, SEQUENTIAL_MODE, ALL_CHROMOSOMES);
     bam_writer_t* bam_sorted_writer_p = bam_writer_new(output_filename, list_p, bam_file_p->bam_header_p, SEQUENTIAL_MODE, ALL_CHROMOSOMES);
     bam_fclose(bam_file_p);
 
@@ -189,75 +185,6 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
 
     alignments_list_free(list_p);
 }
-
-/*
-// merge implementation
-void sort_bam_file(char* bam_input, char* output_directory) {  // test for performance measurements
-
- int N = 150000000;
- int X = 1;
-//  int ordena[N];
-//  int ordena_join[X*N];
- int* ordena = (int*) malloc(N * sizeof(int));
- memset(ordena, 0, N * sizeof(int));
- int* ordena_before_merge = (int*) malloc(N * X * sizeof(int));
- memset(ordena_before_merge, 0, N * X * sizeof(int));
- int* ordena_merged = (int*) malloc(N * X * sizeof(int));
- memset(ordena_merged, 0, N * X * sizeof(int));
-
- unsigned int iseed = (unsigned int)time(NULL);
- srand(iseed);
-
- if (time_flag) { start_timer(t1_write); } //time_write stores random generator time
- for (int i=0; i<N; i++) {
-     ordena[i] = rand();
-     //if (N - i < 20) { printf("ordena[%i]: %i\n", i, ordena[i]);}
- }
- if (time_flag) { stop_timer(t1_write, t2_write, write_time); }
-
- for (int j=0; j<X; j++) {
-     //sort_vector(ordena, N);
-     //sort_key_value(ordena, ordena, N);
- }
-
- //sort_key_value(ordena_join, ordena_join, N);
-
- int ordena_indices[X];
- memset(&ordena_indices, 0, X * sizeof(int));
-
- for (int i=0; i<X; i++) {
-     for (int j=0; j<N; j++) {
-  ordena_before_merge[i*N + j] = ordena[j];
-     }
- }
-
-//  for (int i=0; i<N*X; i++) {
-//      printf("ordena_before_merge[%i]: %i\n", i, ordena_before_merge[i]);
-//  }
-
- if (time_flag) { start_timer(t1_result); } //time_result stores merge time
- int next_pos;
- for (int k=0; k<N*X; k++) {
-
-     for (int m=0; m<X; m++) {
-  if (ordena_before_merge[m * N + ordena_indices[m]] < ordena_before_merge[next_pos * N + ordena_indices[next_pos]]) {
-      next_pos = m;
-  }
-     }
-
-     ordena_merged[k] = ordena_before_merge[next_pos * N + ordena_indices[next_pos]];
-     ordena_indices[next_pos]++;
-     if (ordena_indices[next_pos] == N) { ordena_indices[next_pos]--; }
-     next_pos = 0;
-
- }
- if (time_flag) { stop_timer(t1_result, t2_result, result_time); }
-
-//  for (int i=0; i<N*X; i++) {
-//      printf("ordena_merged[%i]: %i\n", i, ordena_merged[i]);
-//  }
-
-}*/
 
 void sort_dataset_by_id(char* dataset_input, char* output_directory) {
     unsigned int read_lines = 0;

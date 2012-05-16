@@ -10,11 +10,10 @@
 #include "bam_data_batch_list.h"
 #include "commons.h"
 
-#define COVERAGE_FILE_SUFFIX  ".coverage"
+#define COVERAGE_FILE_SUFFIX  	".coverage"
 
-#define MAX_NTS_PER_CHROMOSOME 250000000
-#define NTS_PER_COUNTER   10000000
-
+#define MAX_NTS_PER_CHROMOSOME 	250000000
+#define NTS_PER_COUNTER   	10000000
 
 /* **************************************
  *    		Structures  		*
@@ -26,10 +25,10 @@
 * Coverage counter for nucleotide coverage store
 */
 typedef struct bam_coverage_counter {
-    short int chromosome;     /**< Chromosome. */
-    short int print;     /**< Flag to print or not the counter (printed when completely filled). */
-    unsigned short int coverage_counter[NTS_PER_COUNTER]; /**< Vector for storing coverage count by nucleotide. */
-    pthread_mutex_t lock;     /**< Lock. */
+    short int chromosome;     					/**< Chromosome. */
+    short int print;     					/**< Flag to print or not the counter (printed when completely filled). */
+    unsigned short int coverage_counter[NTS_PER_COUNTER]; 	/**< Vector for storing coverage count by nucleotide. */
+    pthread_mutex_t lock;     					/**< Lock. */
 } bam_coverage_counter_t;
 
 /**
@@ -39,7 +38,7 @@ typedef struct bam_coverage_counter {
 * the required positions to compute a complete chromosome count
 */
 typedef struct bam_chromosome_coverage {
-    bam_coverage_counter_t** bam_coverage_counter_p; /**< Pointers to partial bam_coverage_counter. */
+    bam_coverage_counter_t** bam_coverage_counter_p; 		/**< Pointers to partial bam_coverage_counter. */
 } bam_chromosome_coverage_t;
 
 /* **************************************

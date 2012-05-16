@@ -62,24 +62,3 @@ void cpu_bam_qc_map_errors(bam_data_core_t* core_data_p, uint32_t* cigar_data_p,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -116,7 +116,13 @@ void qc_hash_list_unlock(qc_hash_list_t* list_p);
 */
 void qc_hash_list_insert(qc_hash_list_item_t* qc_hash_list_item_p, qc_hash_list_t* qc_hash_list_p);
 
-
+/**
+*  @brief Removes an item from the qc hash list
+*  @param qc_hash_list_p pointer to the qc_hash_list
+*  @return pointer to the qc_hash_list_item
+*  
+*  Removes an item from the qc hash list
+*/
 qc_hash_list_item_t* qc_hash_list_remove(qc_hash_list_t* qc_hash_list_p);
 
 /**

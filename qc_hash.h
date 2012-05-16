@@ -8,11 +8,11 @@
 #include "commons.h"
 #include "qc_hash_list.h"
 
-#define QC_HASH_LENGTH  10000000
+#define QC_HASH_LENGTH  	10000000
 
-#define PAIRED_END1  1
-#define PAIRED_END2  2
-#define NO_PAIRED_END  0
+#define PAIRED_END1  		1
+#define PAIRED_END2  		2
+#define NO_PAIRED_END  		0
 
 #define LOWER_8_BITS_MASK 255
 #define HIGHER_8_BITS_MASK 65280

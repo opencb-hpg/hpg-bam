@@ -1,6 +1,6 @@
 
-#ifndef SORT_H_
-#define SORT_H_
+#ifndef SORT_H
+#define SORT_H
 
 #include "cuda_commons.h"
 
@@ -43,4 +43,4 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
 */
 void sort_dataset_by_id(char* dataset_input, char* output_directory);
 
-#endif
+#endif  /* SORT_H */

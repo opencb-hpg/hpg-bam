@@ -153,7 +153,6 @@ void gff_data_fill_regions_(gff_region_t* gff_regions_p, gff_line_t* gff_lines_p
 
     for (i = 0; i < num_regions; i++) {
         if (strlen(gff_lines_p[i].seqname) == 4) {
-            //chromosome_aux[0] = ' ';
             chromosome_aux[1] = gff_lines_p[i].seqname[3];
         } else if (strlen(gff_lines_p[i].seqname) == 5) {
             chromosome_aux[0] = gff_lines_p[i].seqname[3];
@@ -163,7 +162,7 @@ void gff_data_fill_regions_(gff_region_t* gff_regions_p, gff_line_t* gff_lines_p
         }
 
         sscanf(chromosome_aux, "%i", &(gff_regions_p[i].chromosome));
-        //printf("chromosome: %i\n\n", gff_regions_p[i].chromosome);
+
         gff_regions_p[i].start = gff_lines_p[i].start - 1;
         gff_regions_p[i].end = gff_lines_p[i].end - 1;
 

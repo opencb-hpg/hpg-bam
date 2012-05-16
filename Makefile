@@ -30,7 +30,7 @@ all: $(ALL)
 
 hpg-bam: commons-objects bam_hpc_tools_main.o hpg-bam-objects containers-objects region-objects qc.o sort.o sort_thrust.o convert.o qc_kernel_cuda.o cuda_commons.o
 	$(NVCC) $(NVCCFLAGS) $(COMMONS_LIB)/*.o bam_hpc_tools_main.o aligner_dataset.o aligner_dataset_file.o bam_file.o bam_reader.o bam_writer.o \
-        bam_data_batch_list.o bam_qc_batch.o bam_qc_report.o bam_coverage.o chrom_alignments.o convert.o qc.o qc_hash.o qc_hash_list.o list.o sort.o \
+        bam_qc_batch.o bam_qc_report.o bam_coverage.o chrom_alignments.o convert.o qc.o qc_hash.o qc_hash_list.o list.o sort.o \
         cuda_commons.o bam_data_batch.o sort_thrust.o qc_kernel_cuda.o qc_kernel_omp.o gff_data.o gff_reader.o alignment.o region_table.o region.o \
         GeneralHashFunctions.o -o $(BIN)/hpg-bam -L$(LIB) -lbam -lz -I$(XML_LIB) -lxml2 -lcurl -lcprops
 

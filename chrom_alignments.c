@@ -86,7 +86,6 @@ bam1_t* chrom_alignments_get_alignment(chrom_alignments_t* chrom_alignments_p, i
 
     if (chrom_alignments_p->alignment_count > index) {
         alignment_p = chrom_alignments_p->bam_alignments_p[index];
-        //alignment_p = chrom_alignments_p->bam_alignments_p[chrom_alignments_p->alignment_count - index];
     }
 
     pthread_mutex_unlock(&chrom_alignments_p->alignment_count_lock);

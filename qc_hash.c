@@ -57,7 +57,6 @@ void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int s
     unsigned int alignment_hash;
     qc_hash_list_item_t* found_item_p = qc_hash_find_id_seq_(qc_hash_p, id_seq, &alignment_hash);
 
-
     if (found_item_p != NULL) {
         qc_hash_update_id_seq_(found_item_p, id_seq, tid, start_coordinate, seq_length, paired_end);
     } else {
@@ -169,7 +168,6 @@ void qc_hash_update_id_seq_(qc_hash_list_item_t* item_p, char* id_seq, int tid, 
 
         free(read_position_aux2_p);
     }
-
 }
 
 void qc_hash_incr_count_(qc_hash_list_item_t* item_p, char* id_seq, short int paired_end) {
@@ -178,7 +176,7 @@ void qc_hash_incr_count_(qc_hash_list_item_t* item_p, char* id_seq, short int pa
     } else if (paired_end == PAIRED_END2) {
         item_p->num_pairends2++;
     } else {
-        //printf("qc_hash_incr_count_: id_seq do not match /1 or /2 termination, NO PAIRED END FOUND!!!!!\n");
+        LOG_ERROR("paired end value is not PAIRED_END1 nor PAIRED_END2");
     }
 }
 
@@ -211,9 +209,7 @@ int qc_hash_list_item_perform_calculations_(qc_hash_list_item_t* item_p, qc_mapp
 #pragma omp parallel for num_threads(cpu_num_threads) shared(num_pairends1, num_pairends2, pairend1_p, pairend2_p, counter_p, num_mappings, mean_paired_end_distance) private(distance_size)
     for (int i = 0; i < num_pairends1; i++) {
         for (int j = 0; j < num_pairends2; j++) {
-
             if (pairend1_p[i].tid == pairend2_p[j].tid) {
-
                 distance_size = abs(pairend2_p[j].position - pairend1_p[i].position);
 
                 if (distance_size <= max_distance_size) {
@@ -222,11 +218,9 @@ int qc_hash_list_item_perform_calculations_(qc_hash_list_item_t* item_p, qc_mapp
                         num_mappings++;
                         *mean_paired_end_distance += distance_size;
                     }
-                    //printf("num_mappings: %i\n", num_mappings);
-                    //printf("distance_size: %i\n", abs(distance_size));
                 }
             } else {
-                //printf("distinct chromosome...\n");
+                //distinct chromosome
             }
         }
     }
@@ -243,5 +237,4 @@ int qc_hash_list_item_perform_calculations_(qc_hash_list_item_t* item_p, qc_mapp
 
     return num_mappings;
 }
-
 

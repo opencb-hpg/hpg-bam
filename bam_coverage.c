@@ -8,8 +8,8 @@
 #include "bam_coverage.h"
 #include "gff_data.h"
 
-#define LINES_PER_COVERAGE_PRINT_BUFFER  7
-#define COVERAGE_LINE_LENGTH   21
+#define LINES_PER_COVERAGE_PRINT_BUFFER 	 7
+#define COVERAGE_LINE_LENGTH   			21
 
 /* ******************************************************
  *      		Private functions     		*
@@ -251,7 +251,7 @@ void bam_coverage_counter_delete_file(char* output_directory, char* input_filena
 }
 
 /* **************************************************************
- *      Coverage computation function     *
+ *      	Coverage computation function     		*
  * *************************************************************/
 
 void bam_coverage_compute(bam_data_batch_t* batch_p, bam_chromosome_coverage_t* bam_chromosome_coverage_p, gff_data_t* gff_data_p, char* output_directory, char* input_filename, int cpu_num_threads) {
@@ -311,7 +311,7 @@ void str_coverage_matrix_init() {
 }
 
 /* **************************************************************
- *      Private function implementations    *
+ *      	Private function implementations    		*
  * *************************************************************/
 
 void bam_coverage_compute_alignment_in_region_(int chromosome, int start_coordinate, uint32_t* cigar_data_p, int cigar_index, int num_cigar_operations, gff_region_t* region_p, bam_chromosome_coverage_t* bam_chromosome_coverage_p) {

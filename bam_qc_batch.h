@@ -4,19 +4,18 @@
 
 #include <pthread.h>
 
-#include "qc_hash.h"
-
 #include "bam_file.h"
 #include "commons.h"
+#include "qc_hash.h"
 
-#define X 0
-#define I  1
-#define D  2
-#define M  3
-#define EQUAL  4
-#define MISMATCHES 5
+#define X  		0
+#define I  		1
+#define D  		2
+#define M  		3
+#define EQUAL  		4
+#define MISMATCHES 	5
 
-#define COUNTERS_SIZE 6
+#define COUNTERS_SIZE 	6
 
 /* **************************************
  *    		Structures  		*
