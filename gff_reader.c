@@ -12,7 +12,7 @@ unsigned int gff_file_read(char* filename, gff_line_t* gff_lines_p) {
     FILE* file = fopen(filename, "r");
 
     if (file == NULL) {
-        LOG_ERROR("Error opening gff file");
+        LOG_FATAL("Error opening gff file");
     }
 
     char* buffer = (char*) calloc(1, MAX_GFF_FILE_LINE_LENGTH);

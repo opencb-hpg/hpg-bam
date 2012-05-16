@@ -375,14 +375,16 @@ int main(int argc, char **argv) {
             case 'l':
                 //printf("option --sam with value '%s'\n", optarg);
                 if (sam_input == NULL) {
-                    sam_input = optarg;
+		    sam_input = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+		    strcpy(sam_input, optarg);
                 }
                 break;
 
             case 'm':
                 //printf("option --bam with value '%s'\n", optarg);
-                if (bam_input == NULL) {
-                    bam_input = optarg;
+		if (bam_input == NULL) {
+		    bam_input = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+		    strcpy(bam_input, optarg);
                 }
                 break;
 
@@ -404,7 +406,8 @@ int main(int argc, char **argv) {
 
             case 'p':
                 //printf("option --output-dir with value '%s'\n", optarg);
-                output_directory = optarg;
+		output_directory = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+		strcpy(output_directory, optarg);                
                 break;
 
             case 'q':
@@ -414,7 +417,8 @@ int main(int argc, char **argv) {
             case 'r':
                 //printf("option --gff with value '%s'\n", optarg);
                 if (gff_input == NULL) {
-                    gff_input = optarg;
+		    gff_input = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+		    strcpy(gff_input, optarg);
                 }
                 break;
 
@@ -523,7 +527,8 @@ int main(int argc, char **argv) {
             case 'D':
                 //printf("option --dataset with value '%s'\n", optarg);
                 if (dataset_input == NULL) {
-                    dataset_input = optarg;
+                    dataset_input = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+                    strcpy(dataset_input, optarg);
                 }
                 break;
 
@@ -769,13 +774,13 @@ int main(int argc, char **argv) {
     }
 
     //free memory
-    //if (log_filename != NULL) free(log_filename);
-    //if (argv_from_file_options != NULL) free(argv_from_file_options);
-    //if (sam_input != NULL) free(sam_input);
-    //if (bam_input != NULL) free(bam_input);
-    //if (output_directory != NULL) free(output_directory);
-    //if (gff_input != NULL) free(gff_input);
-    //if (dataset_input != NULL) free(dataset_input);
+    if (log_filename != NULL) free(log_filename);
+    if (argv_from_file_options != NULL) free(argv_from_file_options);
+    if (sam_input != NULL) free(sam_input);
+    if (bam_input != NULL) free(bam_input);
+    if (output_directory != NULL) free(output_directory);
+    if (gff_input != NULL) free(gff_input);
+    if (dataset_input != NULL) free(dataset_input);
 
     return 1;
 }
