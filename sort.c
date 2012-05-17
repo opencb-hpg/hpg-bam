@@ -1,31 +1,22 @@
 
-#ifndef SORT_CU
-#define SORT_CU
+#ifndef SORT_C
+#define SORT_C
 
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef THRUST-GPU
-    //#include <thrust/host_vector.h>
-    //#include <thrust/device_vector.h>
-    //#include <thrust/sort.h>
-    //#include <thrust/copy.h>
-#endif
-
-extern "C" {
-    #include "aligner_dataset.h"
-    #include "aligner_dataset_file.h"
-    #include "bam.h"
-    #include "bam_reader.h"
-    #include "bam_writer.h"
-    #include "chrom_alignments.h"
-    #include "commons.h"
-    #include "file_utils.h"
-    #include "log.h"
-    #include "sam.h"
-    #include "sort.h"
-    #include "system_utils.h"
-}
+#include "aligner_dataset.h"
+#include "aligner_dataset_file.h"
+#include "bam.h"
+#include "bam_reader.h"
+#include "bam_writer.h"
+#include "chrom_alignments.h"
+#include "commons.h"
+#include "file_utils.h"
+#include "log.h"
+#include "sam.h"
+#include "sort.h"
+#include "system_utils.h"
 
 #include "sort_thrust.h"
 
@@ -212,4 +203,4 @@ void sort_dataset_by_id(char* dataset_input, char* output_directory) {
     aligner_dataset_fclose(dataset_file_p);
 }
 
-#endif /* SORT_CU */
+#endif /* SORT_C */
