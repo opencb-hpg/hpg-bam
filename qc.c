@@ -32,6 +32,8 @@ void* results_server(void* params_p);
 
 list_t bam_qc_batch_list;
 
+int num_of_chromosomes = NUM_OF_CHROMOSOMES;
+
 int bam_batch_reader_alive = 1;
 int gpus_thread_alive = 1;
 int cpus_thread_alive = 1;
@@ -409,7 +411,7 @@ void* results_server(void* params_p) {
         pthread_mutex_unlock(&cpus_thread_alive_lock);
     } // end of batch loop
 
-    printf("bam_qc_report.num_alignments: %i, strand (+): %i, strand (-): %i\n", bam_qc_report.num_alignments, bam_qc_report.strand_counter, (bam_qc_report.num_alignments - bam_qc_report.strand_counter));
+    printf("bam_qc_report.num_alignments: %lu, strand (+): %i, strand (-): %i\n", bam_qc_report.num_alignments, bam_qc_report.strand_counter, (bam_qc_report.num_alignments - bam_qc_report.strand_counter));
 
     if (time_flag) {
         start_timer(t1_result);
@@ -417,13 +419,13 @@ void* results_server(void* params_p) {
 
     //calculate mean quality and mean length per alignment
     if (bam_qc_report.num_alignments > 0) {
-        printf("bam_qc_report.mean_read_quality: %i, num_alignments: %i, mean_quality: %i\n", bam_qc_report.mean_map_quality, bam_qc_report.num_alignments, (bam_qc_report.mean_map_quality / bam_qc_report.num_alignments));
-        printf("bam_qc_report.mean_alignment_length: %i, num_alignments: %i, mean_alignment_length: %i\n", bam_qc_report.mean_alignment_length, bam_qc_report.num_alignments, (bam_qc_report.mean_alignment_length / bam_qc_report.num_alignments));
+        printf("bam_qc_report.mean_read_quality: %lu, num_alignments: %lu, mean_quality: %i\n", bam_qc_report.mean_map_quality, bam_qc_report.num_alignments, (bam_qc_report.mean_map_quality / bam_qc_report.num_alignments));
+        printf("bam_qc_report.mean_alignment_length: %lu, num_alignments: %lu, mean_alignment_length: %i\n", bam_qc_report.mean_alignment_length, bam_qc_report.num_alignments, (bam_qc_report.mean_alignment_length / bam_qc_report.num_alignments));
         bam_qc_report.mean_map_quality /= bam_qc_report.num_alignments;
         bam_qc_report.mean_alignment_length /= bam_qc_report.num_alignments;
     } else {
-        printf("bam_qc_report.mean_read_quality: %i, num_alignments: %i, mean_quality: 0\n", bam_qc_report.mean_map_quality, bam_qc_report.num_alignments);
-        printf("bam_qc_report.mean_alignment_length: %i, num_alignments: %i, mean_alignment_length: 0\n", bam_qc_report.mean_alignment_length, bam_qc_report.num_alignments);
+        printf("bam_qc_report.mean_read_quality: %lu, num_alignments: %lu, mean_quality: 0\n", bam_qc_report.mean_map_quality, bam_qc_report.num_alignments);
+        printf("bam_qc_report.mean_alignment_length: %lu, num_alignments: %lu, mean_alignment_length: 0\n", bam_qc_report.mean_alignment_length, bam_qc_report.num_alignments);
         bam_qc_report.mean_map_quality = 0;
         bam_qc_report.mean_alignment_length = 0;
     }

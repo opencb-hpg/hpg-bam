@@ -296,18 +296,19 @@ void str_coverage_matrix_init() {
     for (int i = 100; i < 1000; i++) {
         strlen_coverage_matrix[i] = 3;
     }
-    strlen_coverage_matrix[1000] = 4;
-
-    for (int i = 1001; i < 65536; i++) {
-        memcpy(&str_coverage_matrix[i], "1000", 4);
+    
+    for (int i = 1000; i < 10000; i++) {
         strlen_coverage_matrix[i] = 4;
     }
 
-    for (int i = 0; i <= 1000; i++) {
+    for (int i = 10000; i < 65536; i++) {
+        strlen_coverage_matrix[i] = 5;
+    }
+
+    for (int i = 0; i < 65536; i++) {
         str_coverage_matrix[i] = (char*) calloc(strlen_coverage_matrix[i], sizeof(char));
         nt_coverage_to_string_(str_coverage_matrix[i], i);
     }
-
 }
 
 /* **************************************************************
@@ -396,7 +397,6 @@ void bam_coverage_compute_alignment_(int chromosome, int start_coordinate, uint3
             {
                 if (bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start] == NULL) {
                     bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start] = (bam_coverage_counter_t*) calloc(1, sizeof(bam_coverage_counter_t));
-                    //bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start]->lock = PTHREAD_MUTEX_INITIALIZER;
                     pthread_mutex_init(&(bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start]->lock), NULL);
                 }
             }
@@ -407,7 +407,6 @@ void bam_coverage_compute_alignment_(int chromosome, int start_coordinate, uint3
             {
                 if (bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end] == NULL) {
                     bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end] = (bam_coverage_counter_t*) calloc(1, sizeof(bam_coverage_counter_t));
-                    //bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end]->lock = PTHREAD_MUTEX_INITIALIZER;
                     pthread_mutex_init(&(bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end]->lock), NULL);
                 }
             }

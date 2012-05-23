@@ -50,4 +50,6 @@ extern pthread_mutex_t read_count_lock;
 extern unsigned int nts_with_coverage;
 extern unsigned long mean_coverage;
 
+extern int num_of_chromosomes;
+
 #endif /* BAM_COMMONS_H */
