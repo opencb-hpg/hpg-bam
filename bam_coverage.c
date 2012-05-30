@@ -26,8 +26,28 @@ int nt_coverage_to_string_(char* str_coverage, int coverage);
  *      		Global variables     		*
  * *****************************************************/
 
-char* str_chromosomes[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"};
-int strlen_chromosomes[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+//char* str_chromosomes[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"};
+//int strlen_chromosomes[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+char* str_chromosomes[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                            "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
+                            "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", 
+                            "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                            "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", 
+                            "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", 
+                            "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", 
+                            "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", 
+                            "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", 
+                            "91", "92", "93", "94", "95", "96", "97", "98", "99", "100" };
+int strlen_chromosomes[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                             2, 2, 2, 2, 2, 2, 2, 2, 2, 2 };
 
 /* ******************************************************
  *      	Function implementations    		*
@@ -52,7 +72,7 @@ void bam_coverage_counter_mark_to_print(bam_chromosome_coverage_t* bam_chromosom
     bam_coverage_counter_t** counter_p;
     int count_not_null = 0;
 
-    for (int i = (NUM_OF_CHROMOSOMES - 1); i >= 0; i--) {
+    for (int i = (num_of_chromosomes - 1); i >= 0; i--) {  
         counter_p = bam_chromosome_coverage_p[i].bam_coverage_counter_p;
 
         for (int j = ((MAX_NTS_PER_CHROMOSOME / NTS_PER_COUNTER) - 1); j >= 0; j--) {
@@ -102,7 +122,7 @@ void bam_coverage_counter_print(bam_chromosome_coverage_t* bam_chromosome_covera
         start_timer(t1_write);
     }
 
-    for (int k = 0; k < NUM_OF_CHROMOSOMES; k++) {
+    for (int k = 0; k < num_of_chromosomes; k++) {
         bam_coverage_counter_p = bam_chromosome_coverage_p[k].bam_coverage_counter_p;
 
         for (int i = 0; i < (MAX_NTS_PER_CHROMOSOME / NTS_PER_COUNTER); i++) {
@@ -195,7 +215,8 @@ void bam_coverage_counter_print_block(bam_chromosome_coverage_t* bam_chromosome_
     if (time_flag) {
         start_timer(t1_write);
     }
-    for (int k = 0; k < NUM_OF_CHROMOSOMES; k++) {
+    
+    for (int k = 0; k < num_of_chromosomes; k++) {
         bam_coverage_counter_p = bam_chromosome_coverage_p[k].bam_coverage_counter_p;
 
         for (int i = 0; i < (MAX_NTS_PER_CHROMOSOME / NTS_PER_COUNTER); i++) {
@@ -405,6 +426,11 @@ void bam_coverage_compute_alignment_(int chromosome, int start_coordinate, uint3
         } else {
 #pragma omp critical
             {
+                if (bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start] == NULL) {
+                    bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start] = (bam_coverage_counter_t*) calloc(1, sizeof(bam_coverage_counter_t));
+                    pthread_mutex_init(&(bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_start]->lock), NULL);
+                }
+      
                 if (bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end] == NULL) {
                     bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end] = (bam_coverage_counter_t*) calloc(1, sizeof(bam_coverage_counter_t));
                     pthread_mutex_init(&(bam_chromosome_coverage_p[chromosome].bam_coverage_counter_p[counter_offset_end]->lock), NULL);

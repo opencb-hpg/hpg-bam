@@ -11,8 +11,9 @@
 #define PHRED64  64
 
 #define LIST_OF_CHROMOSOMES {"1", "2", "3", "4", "5", "6", "7, "8, "9, "10", "11", "12", "13", "14", "15", "16", "17, "18, "19, "20", "21", "22+X", "22+Y", "22+MT"}
-#define NUM_OF_CHROMOSOMES 25
-#define ALL_CHROMOSOMES  9999
+#define DEFAULT_NUM_OF_CHROMOSOMES 	25
+#define MAX_NUM_OF_CHROMOSOMES 		100
+#define ALL_CHROMOSOMES  		9999
 
 #define MAX_ALIGNMENT_LENGTH 1000
 
@@ -28,6 +29,9 @@ extern struct timeval t1_sort, t2_sort;
 
 extern double convert_time;
 extern struct timeval t1_convert, t2_convert;
+
+extern double filter_time;
+extern struct timeval t1_filter, t2_filter;
 
 extern double reader_server_time;
 extern struct timeval t1_reader_server, t2_reader_server;

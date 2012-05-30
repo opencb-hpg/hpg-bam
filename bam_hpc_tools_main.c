@@ -66,6 +66,9 @@ struct timeval t1_sort, t2_sort;
 double convert_time = 0.0;
 struct timeval t1_convert, t2_convert;
 
+double filter_time = 0.0;
+struct timeval t1_filter, t2_filter;
+
 double reporting_time = 0.0;
 struct timeval t1_reporting, t2_reporting;
 
@@ -95,6 +98,8 @@ double mean_batch_size = 0;
 
 unsigned int nts_with_coverage = 0;
 unsigned long mean_coverage = 0;
+
+int num_of_chromosomes = 0;
 
 int main(int argc, char **argv) {
     // setting global variables for logger
@@ -143,6 +148,7 @@ int main(int argc, char **argv) {
     int max_quality = DEFAULT_MAX_QUALITY;
     int min_mismatches = DEFAULT_MIN_MISMATCHES;
     int max_mismatches = DEFAULT_MAX_MISMATCHES;
+    int filter_chromosome = 0;
 
     //variables for long_options
     int c;
@@ -195,13 +201,15 @@ int main(int argc, char **argv) {
         {"max-quality",    required_argument, 0, 'z'},
         {"min-mismatches",   required_argument, 0, 'A'},
         {"max-mismatches",   required_argument, 0, 'B'},
+        {"chr",   required_argument, 0, 'C'},
+        {"chromosome",   required_argument, 0, 'C'},	
 
         /* Validate BAM  */
-        {"validate",         no_argument, 0, 'C'},
-        {"dataset",    required_argument, 0, 'D'},
+        {"validate",         no_argument, 0, 'D'},
+        {"dataset",    required_argument, 0, 'E'},
 
         /* Sort dataset  */
-        {"sort-dataset",         no_argument, 0, 'E'},
+        {"sort-dataset",         no_argument, 0, 'F'},
 
         {0, 0, 0, 0}
     };
@@ -518,13 +526,25 @@ int main(int argc, char **argv) {
                 }
                 break;
 
-            /* VALIDATE BAM PARAMETERS  */
             case 'C':
+                //printf("option --chromosome with value '%s'\n", optarg);
+                if (filter_chromosome == 0) {
+                    if (is_numeric(optarg) == 1) {
+                        sscanf(optarg, "%i", &filter_chromosome);
+                    } else {
+		        filter_chromosome = 1;
+                        LOG_INFO("--chromosomes is not a valid number, assuming default value 1\n");
+                    }
+                }
+                break;
+
+            /* VALIDATE BAM PARAMETERS  */
+            case 'D':
                 //printf("option --validate selected, performing BAM validation\n");
                 filter_step = 1;
                 break;
 
-            case 'D':
+            case 'E':
                 //printf("option --dataset with value '%s'\n", optarg);
                 if (dataset_input == NULL) {
                     dataset_input = (char*) calloc(strlen(optarg) + 1, sizeof(char));
@@ -532,7 +552,7 @@ int main(int argc, char **argv) {
                 }
                 break;
 
-            case 'E':
+            case 'F':
                 //printf("option --validate selected, performing BAM validation\n");
                 sort_dataset_step = 1;
                 break;
@@ -589,6 +609,14 @@ int main(int argc, char **argv) {
         sort_step = 0;
         filter_step = 0;
         validate_step = 0;
+    }
+
+    if (filter_step) {
+        convert_step = 0;
+        qc_step = 0;
+        sort_step = 0;
+        validate_step = 0;    
+        sort_dataset_step = 0;
     }
 
     if (validate_step) {
@@ -719,7 +747,9 @@ int main(int argc, char **argv) {
     }
 
     if (filter_step) {
-        //filter_bam_file(bam_input, output_directory);
+        if (filter_chromosome != 0) {
+            filter_bam_by_chromosome(bam_input, output_directory, filter_chromosome);
+        }
     }
 
     if (validate_step) {

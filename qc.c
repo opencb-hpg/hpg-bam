@@ -32,8 +32,6 @@ void* results_server(void* params_p);
 
 list_t bam_qc_batch_list;
 
-int num_of_chromosomes = NUM_OF_CHROMOSOMES;
-
 int bam_batch_reader_alive = 1;
 int gpus_thread_alive = 1;
 int cpus_thread_alive = 1;
@@ -190,9 +188,9 @@ void* cpus_server(void* params_p) {
     qc_hash_t* qc_hash_p = (qc_hash_t*) qc_hash_new(QC_HASH_LENGTH);
 
     // variables for coverage (regions data)
-    bam_chromosome_coverage_t bam_chromosome_coverage[NUM_OF_CHROMOSOMES];
+    bam_chromosome_coverage_t bam_chromosome_coverage[num_of_chromosomes];
 
-    for (int j = 0; j < NUM_OF_CHROMOSOMES; j++) {
+    for (int j = 0; j < num_of_chromosomes; j++) {      
         bam_chromosome_coverage_init(&bam_chromosome_coverage[j]);
     }
 
@@ -289,7 +287,7 @@ void* cpus_server(void* params_p) {
     }
 
     //free qc hash structure, gff data and chromosome coverage
-    for (int j = 0; j < NUM_OF_CHROMOSOMES; j++) {
+    for (int j = 0; j < num_of_chromosomes; j++) {  
         bam_chromosome_coverage_clear(&bam_chromosome_coverage[j]);
     }
 

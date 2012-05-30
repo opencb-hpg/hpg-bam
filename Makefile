@@ -16,8 +16,8 @@ ALL = hpg-bam
 
 CC = gcc
 CXX = g++ -fopenmp 
-CFLAGS = -O0 -g -Wall -std=c99
-#CFLAGS = -O3 -Wall -std=c99
+CFLAGS = -O3 -Wall -std=c99
+#CFLAGS = -O0 -g -Wall -std=c99
 #CFLAGS = -DVERBOSE_DBG -Wall -std=c99
 
 CINCLUDES = -I. -I/opt/cuda/include -I./samtools-0.1.18/ -I$(BAM_LIB) -I$(COMMONS_LIB) -I$(COMMONS_CUDA_LIB) -I$(CONTAINERS_LIB) -I$(REGIONS_LIB) -lcprops

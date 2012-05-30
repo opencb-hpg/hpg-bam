@@ -31,4 +31,14 @@ void convert_bam_to_sam(char* bam_input, char* sam_input);
 */
 void convert_sam_to_bam(char* sam_input, char* bam_input);
 
+/**
+*  @brief Slices a BAM file into BAMs incrementally until a given chromosome is reached
+*  @param bam_input bam input filename
+*  @param last_chromosome last chromosome to write in sliced BAM file
+*  @return void
+*  
+*  Slices a BAM file into BAMs incrementally until a given chromosome is reached
+*/
+void filter_bam_by_chromosome(char* bam_input, char* output_directory, short int chromosome);
+
 #endif /* CONVERT_H */

@@ -43,29 +43,33 @@ int bam_reader_alive = 1;
 
 void sort_bam_file(size_t batch_size, char* input_filename, char* output_directory) {
     int num_aligments_read;
+    num_of_chromosomes = bam_fread_num_chromosomes(input_filename);
     char input_shortname[MAX_FULL_PATH_LENGTH];
     char output_filename[MAX_FULL_PATH_LENGTH];
-    char** split_filename = (char**) calloc(NUM_OF_CHROMOSOMES, sizeof(char*));
+    char** split_filename = (char**) calloc(num_of_chromosomes, sizeof(char*));
 
     get_filename_from_path(input_filename, input_shortname);
     sprintf(output_filename, "%s/%s%s", output_directory, input_shortname, SORTED_FILE_SUFFIX);
 
-    alignments_list_t* list_p = alignments_list_new(NUM_OF_CHROMOSOMES);
+    alignments_list_t* list_p = alignments_list_new(num_of_chromosomes);
 
     // first phase: one-reader vs multi-writers
     // calling threads to read alignments from file and write back to file (one per chromosome)
     bam_reader_t* bam_first_reader_p = bam_reader_new(input_filename, batch_size, 0, list_p, CHROMOSOME_MODE, NO_SORT, ALL_CHROMOSOMES); //base_quality = 0
-    bam_writer_t** bam_split_writer_p = (bam_writer_t**) malloc(NUM_OF_CHROMOSOMES * sizeof(bam_writer_t*));
+    bam_writer_t** bam_split_writer_p = (bam_writer_t**) malloc(num_of_chromosomes * sizeof(bam_writer_t*));
 
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    //header is stored in a temp file for recovery
+    bam_fwrite_temporary_header(bam_first_reader_p->bam_file_p->bam_header_p);
+
+    for (int i = 0; i < num_of_chromosomes; i++) {
         split_filename[i] = (char*) malloc(MAX_FULL_PATH_LENGTH * sizeof(char));
         sprintf(split_filename[i], "%s/%s.%i", output_directory, input_shortname, i);
-        bam_split_writer_p[i] = bam_writer_new(split_filename[i], list_p, bam_first_reader_p->bam_file_p->bam_header_p, CHROMOSOME_MODE, i);
+        bam_split_writer_p[i] = bam_writer_new(split_filename[i], list_p, bam_fread_temporary_header(), CHROMOSOME_MODE, i);
     }
 
     bam_reader_start(bam_first_reader_p);
 
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    for (int i = 0; i < num_of_chromosomes; i++) {
         bam_writer_start(bam_split_writer_p[i]);
     }
 
@@ -75,26 +79,26 @@ void sort_bam_file(size_t batch_size, char* input_filename, char* output_directo
 
     num_alignments = bam_reader_join(bam_first_reader_p);
 
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    for (int i = 0; i < num_of_chromosomes; i++) {
         bam_writer_join(bam_split_writer_p[i]);
     }
 
     // second phase: one-reader vs one-writer
     // one-reader is in charged of reading all segmented-files
     alignments_list_free(list_p);
-    list_p = alignments_list_new(NUM_OF_CHROMOSOMES);
+    list_p = alignments_list_new(num_of_chromosomes);
 
     bam_reader_t* bam_split_reader_p;
 
     bam_file_t* bam_file_p = bam_fopen(input_filename);
-    bam_writer_t* bam_sorted_writer_p = bam_writer_new(output_filename, list_p, bam_file_p->bam_header_p, SEQUENTIAL_MODE, ALL_CHROMOSOMES);
+    bam_writer_t* bam_sorted_writer_p = bam_writer_new(output_filename, list_p, bam_fread_temporary_header(), SEQUENTIAL_MODE, ALL_CHROMOSOMES);
     bam_fclose(bam_file_p);
 
     bam_reader_alive = 1;
 
     bam_writer_start(bam_sorted_writer_p);
 
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    for (int i = 0; i < num_of_chromosomes; i++) {
         bam_split_reader_p = bam_reader_new(split_filename[i], batch_size, 0, list_p, SEQUENTIAL_MODE, SORT_BY_POSITION, i);
         bam_reader_start(bam_split_reader_p);
         num_aligments_read = bam_reader_join(bam_split_reader_p);
@@ -106,7 +110,7 @@ void sort_bam_file(size_t batch_size, char* input_filename, char* output_directo
     bam_writer_join(bam_sorted_writer_p);
 
     // delete bam files per chromosome
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    for (int i = 0; i < num_of_chromosomes; i++) {
         remove(split_filename[i]);
         free(split_filename[i]);
     }
@@ -116,29 +120,33 @@ void sort_bam_file(size_t batch_size, char* input_filename, char* output_directo
 
 void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_directory) {
     int num_aligments_read;
+    num_of_chromosomes = bam_fread_num_chromosomes(input_filename);
     char input_shortname[MAX_FULL_PATH_LENGTH];
     char output_filename[MAX_FULL_PATH_LENGTH];
-    char** split_filename = (char**) calloc(NUM_OF_CHROMOSOMES, sizeof(char*));
+    char** split_filename = (char**) calloc(num_of_chromosomes, sizeof(char*));
 
     get_filename_from_path(input_filename, input_shortname);
     sprintf(output_filename, "%s/%s%s", output_directory, input_shortname, SORTED_FILE_SUFFIX);
 
-    alignments_list_t* list_p = alignments_list_new(NUM_OF_CHROMOSOMES);
+    alignments_list_t* list_p = alignments_list_new(num_of_chromosomes);
 
     // first phase: one-reader vs multi-writers
     // calling threads to read alignments from file and write back to file (one per chromosome)
     bam_reader_t* bam_first_reader_p = bam_reader_new(input_filename, batch_size, 0, list_p, CHROMOSOME_MODE, NO_SORT, ALL_CHROMOSOMES); //base_quality = 0
-    bam_writer_t** bam_split_writer_p = (bam_writer_t**) malloc(NUM_OF_CHROMOSOMES * sizeof(bam_writer_t*));
+    bam_writer_t** bam_split_writer_p = (bam_writer_t**) malloc(num_of_chromosomes * sizeof(bam_writer_t*));
 
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
-        split_filename[i] = (char*) malloc(MAX_FULL_PATH_LENGTH * sizeof(char));
+    //header is stored in a temp file for recovery
+    bam_fwrite_temporary_header(bam_first_reader_p->bam_file_p->bam_header_p);
+
+    for (int i = 0; i < num_of_chromosomes; i++) {
+        split_filename[i] = (char*) calloc(MAX_FULL_PATH_LENGTH, sizeof(char));
         sprintf(split_filename[i], "%s/%s.%i", output_directory, input_shortname, i);
-        bam_split_writer_p[i] = bam_writer_new(split_filename[i], list_p, bam_first_reader_p->bam_file_p->bam_header_p, CHROMOSOME_MODE, i);
+        bam_split_writer_p[i] = bam_writer_new(split_filename[i], list_p, bam_fread_temporary_header(), CHROMOSOME_MODE, i);
     }
 
     bam_reader_start(bam_first_reader_p);
 
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    for (int i = 0; i < num_of_chromosomes; i++) {
         bam_writer_start(bam_split_writer_p[i]);
     }
 
@@ -148,26 +156,26 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
 
     num_alignments = bam_reader_join(bam_first_reader_p);
 
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    for (int i = 0; i < num_of_chromosomes; i++) {
         bam_writer_join(bam_split_writer_p[i]);
     }
 
     // second phase: one-reader vs one-writer
     // one-reader is in charged of reading all segmented-files
     alignments_list_free(list_p);
-    list_p = alignments_list_new(NUM_OF_CHROMOSOMES);
+    list_p = alignments_list_new(num_of_chromosomes);
 
     bam_reader_t* bam_split_reader_p;
 
     bam_file_t* bam_file_p = bam_fopen(input_filename);
-    bam_writer_t* bam_sorted_writer_p = bam_writer_new(output_filename, list_p, bam_file_p->bam_header_p, SEQUENTIAL_MODE, ALL_CHROMOSOMES);
+    bam_writer_t* bam_sorted_writer_p = bam_writer_new(output_filename, list_p, bam_fread_temporary_header(), SEQUENTIAL_MODE, ALL_CHROMOSOMES);
     bam_fclose(bam_file_p);
 
     bam_reader_alive = 1;
 
     bam_writer_start(bam_sorted_writer_p);
 
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    for (int i = 0; i < num_of_chromosomes; i++) {
         bam_split_reader_p = bam_reader_new(split_filename[i], batch_size, 0, list_p, SEQUENTIAL_MODE, SORT_BY_POSITION, i);
         bam_reader_start(bam_split_reader_p);
         num_aligments_read = bam_reader_join(bam_split_reader_p);
@@ -178,7 +186,7 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
     bam_writer_join(bam_sorted_writer_p);
 
     // delete bam files per chromosome
-    for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+    for (int i = 0; i < num_of_chromosomes; i++) {
         remove(split_filename[i]);
         free(split_filename[i]);
     }
@@ -205,7 +213,7 @@ void sort_dataset_by_id(char* dataset_input, char* output_directory) {
     get_filename_from_path(dataset_input, input_shortname);
     sprintf(output_filename, "%s/%s%s", output_directory, input_shortname, ALIGNER_DATASET_SORTED_FILE_SUFFIX);
 
-    char** split_filename = (char**) calloc(NUM_OF_CHROMOSOMES, sizeof(char*));
+    char** split_filename = (char**) calloc(num_of_chromosomes, sizeof(char*));
     aligner_dataset_list_write(list_p, output_filename);
 
     aligner_dataset_list_free(list_p);

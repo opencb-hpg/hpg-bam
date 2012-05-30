@@ -26,7 +26,7 @@ void sort_key_value_char(char** keys, int* values, int length);
 
 void sort_alignments_by_position(alignments_list_t* list_p, int chromosome) {
     if (chromosome == ALL_CHROMOSOMES) {
-        for (int i = 0; i < NUM_OF_CHROMOSOMES; i++) {
+        for (int i = 0; i < num_of_chromosomes; i++) {  
             sort_key_value(list_p->chromosomes_p[i]->bam_alignment_coordinates_p, list_p->chromosomes_p[i]->indices_p, list_p->chromosomes_p[i]->alignment_count);
         }
     } else {
