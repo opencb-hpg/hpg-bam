@@ -88,6 +88,8 @@ aligner_dataset_list_t* aligner_dataset_list_realloc(aligner_dataset_list_t* lis
     free(indices_aux_p);
 
     list_p->num_lines = num_lines;
+    
+    return list_p;
 }
 
 void aligner_dataset_list_sort_by_id(aligner_dataset_list_t* list_p) {

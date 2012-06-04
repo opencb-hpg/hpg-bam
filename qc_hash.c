@@ -67,7 +67,6 @@ void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int s
 void qc_hash_perform_calculations(qc_hash_t* qc_hash_p, qc_mapping_counter_t* counter_p, unsigned long* mean_paired_end_distance, int max_distance_size, int cpu_num_threads) {
     int num_mappings = 0;
 
-    qc_hash_list_t* list_p;
     qc_hash_list_item_t* item_p;
 
     for (int i = 0; i < qc_hash_p->length; i++) {
@@ -121,7 +120,6 @@ qc_hash_list_item_t* qc_hash_find_id_seq_(qc_hash_t* qc_hash_p, char* id_seq, un
 }
 
 void qc_hash_insert_id_seq_(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end, unsigned int alignment_hash) {
-    int id_seq_length = strlen(id_seq);
     unsigned int index = alignment_hash;
 
     qc_hash_list_item_t* item_p = qc_hash_list_item_new(id_seq, tid, start_coordinate, seq_length, paired_end);

@@ -35,7 +35,7 @@
 #define DEFAULT_BASE_QUALITY   		PHRED33
 
 #define BAM_GPU_TOOLS_USAGE_HELP "USAGE: bam-gpu-tools [--qc] [--sort] [--filter] --bam <bam_file> --outdir </path/to/dir> [--sam <sam_file> --to-sam | --to-bam] \
-[--max-distance-size <max_distance_in_nts>] [--phred-quality <33|64|sanger|solexa>] [--conf <config_filename>] [--gff <gff_filename>] \
+[--max-distance-size <max_distance_in_nts>] [--phred-quality <33|64|sanger|solexa>] [--conf <config_filename>] [--gff <gff_filename>] [--chr | --chromosome] \
 [--gpu-num-blocks <num_blocks>] [--gpu-num-threads <num_threads>] [--gpu-num-devices <num_devices>] [--cpu-num-threads <num_threads>] \
 [--batch-size] [--batch-list-size] [--log-level <1-5>] [--log-file <log_filename>] [--verbose] [--t | --time] \n"
 
@@ -120,8 +120,7 @@ int main(int argc, char **argv) {
     int base_quality = DEFAULT_BASE_QUALITY;
 
     // variables to store common parameters
-    char* phred_quality = (char*)"";
-
+    
     // variables to store hpc parameters
     int gpu_num_blocks =  DEFAULT_GPU_NUM_BLOCKS;   		// 16
     int gpu_num_threads = DEFAULT_GPU_NUM_THREADS;  		// 512
@@ -358,7 +357,7 @@ int main(int argc, char **argv) {
                 //printf("option --batch-size with value '%li'\n", batch_size);
                 if (batch_size == DEFAULT_BATCH_SIZE_MB * 1000000) {
                     if (is_numeric(optarg) != 0) {
-                        sscanf(optarg, "%i", &batch_size);
+                        sscanf(optarg, "%lu", &batch_size);
 
                         // batch-size > 16MB
                         if (batch_size < 16) {

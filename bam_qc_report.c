@@ -84,11 +84,11 @@ void print_text_report_file(bam_qc_report_t bam_qc_report, int base_quality, cha
     fprintf(fd, "\nProcessed file  : %s\n", inputfilename);
     fprintf(fd, "\nNumber of alignments  : %li\n", bam_qc_report.num_alignments);
     fprintf(fd, "\nMean alignment length  : %li\n", bam_qc_report.mean_alignment_length);
-    fprintf(fd, "\nMean alignment quality: %i\n", bam_qc_report.mean_map_quality);
+    fprintf(fd, "\nMean alignment quality: %lu\n", bam_qc_report.mean_map_quality);
     fprintf(fd, "\nStrand 0/1  : %3.2f/%3.2f\n", 100.0 * (bam_qc_report.num_alignments - bam_qc_report.strand_counter) / bam_qc_report.num_alignments, 100.0 * bam_qc_report.strand_counter / bam_qc_report.num_alignments);
     fprintf(fd, "\nMean distance between paired ends: %ld\n", bam_qc_report.mean_paired_end_distance);
-    fprintf(fd, "\nNumber of covered nts: %ld\n", nts_with_coverage);   //Global variable
-    fprintf(fd, "\nMean coverage: %3.2f\n\n", mean_coverage / nts_with_coverage);  //Global variable
+    fprintf(fd, "\nNumber of covered nts: %u\n", nts_with_coverage);   //Global variable
+    fprintf(fd, "\nMean coverage: %3.2f\n\n", 1.0 * mean_coverage / nts_with_coverage);  //Global variable
 
     if (outfilename != NULL)  fclose(fd);
 }

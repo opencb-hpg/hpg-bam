@@ -107,10 +107,10 @@ void bam_coverage_counter_print(bam_chromosome_coverage_t* bam_chromosome_covera
 
     FILE* fd = (coverage_filename == NULL ? stdout : fopen(coverage_filename, "a"));
 
-    int chromosome, counter_start_position, strlen_chromosome, strlen_coordinate, strlen_coverage;
+    int counter_start_position, strlen_chromosome, strlen_coordinate;    
     bam_coverage_counter_t** bam_coverage_counter_p;
     unsigned short int* coverage_counter_p;
-    char coverage_line[1000];
+
     char* str_chromosome;
     char* str_coordinate = (char*) calloc(9, sizeof(char));
     char* str_coverage = (char*) calloc(5, sizeof(char));
@@ -460,7 +460,7 @@ char* num_chromosome_to_string_(int chromosome) {
 }
 
 int nt_coordinate_to_string_(char* str_coordinate, int coordinate) {
-    int i, quotient, remainder;
+    int i, quotient;
 
     if ((coordinate >= 10000000) && (coordinate < 100000000)) {
         i = 8;
@@ -493,7 +493,7 @@ int nt_coordinate_to_string_(char* str_coordinate, int coordinate) {
 }
 
 int nt_coverage_to_string_(char* str_coverage, int coverage) {
-    int i, quotient, remainder;
+    int i, quotient;
 
     if ((coverage >= 10) && (coverage < 100)) {
         i = 2;

@@ -161,7 +161,7 @@ void gff_data_fill_regions_(gff_region_t* gff_regions_p, gff_line_t* gff_lines_p
             LOG_ERROR("gff file sequence does not match 'chrnn' pattern");
         }
 
-        sscanf(chromosome_aux, "%i", &(gff_regions_p[i].chromosome));
+        sscanf(chromosome_aux, "%hi", &(gff_regions_p[i].chromosome));
 
         gff_regions_p[i].start = gff_lines_p[i].start - 1;
         gff_regions_p[i].end = gff_lines_p[i].end - 1;

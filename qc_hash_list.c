@@ -130,7 +130,7 @@ void qc_hash_list_print(qc_hash_list_t* list_p) {
     int id = 0;
 
     while (item_p != NULL) {
-        printf("item num: %i, id seq: %i, num_pairends1: %i, num_pairends2: %i\n", id++, item_p->id_seq, item_p->num_pairends1, item_p->num_pairends2);
+        printf("item num: %i, id seq: %s, num_pairends1: %i, num_pairends2: %i\n", id++, item_p->id_seq, item_p->num_pairends1, item_p->num_pairends2);
 
         printf("\tpaired end 1 -> ");
         for (int i = 0; i < item_p->num_pairends1; i++) {
