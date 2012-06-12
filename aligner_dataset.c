@@ -12,9 +12,9 @@
 
 aligner_dataset_line_t* aligner_dataset_line_new(short int seq_id_length) {
     aligner_dataset_line_t* aligner_dataset_line_p = (aligner_dataset_line_t*) calloc(1, sizeof(aligner_dataset_line_t));
-
+    
     if (seq_id_length > 0) {
-        aligner_dataset_line_p->seq_id = (char*) calloc(seq_id_length, sizeof(char));
+        aligner_dataset_line_p->seq_id = (char*) calloc(seq_id_length, sizeof(char));	
     }
 
     return aligner_dataset_line_p;
@@ -54,14 +54,17 @@ void aligner_dataset_list_free(aligner_dataset_list_t* list_p) {
     for (int i = 0; i < list_p->num_lines; i++) {
         if (list_p->aligner_dataset_lines_p[i] != NULL) {
             free(list_p->aligner_dataset_lines_p[i]);
-        }
+        }       
 
         if (list_p->seq_id_p[i] != NULL) {
             free(list_p->seq_id_p[i]);
-        }
+        }        
     }
-
+    
+    free(list_p->aligner_dataset_lines_p);
+    free(list_p->seq_id_p);
     free(list_p->indices_p);
+    free(list_p);
 }
 
 void aligner_dataset_list_insert_line(aligner_dataset_list_t* list_p, aligner_dataset_line_t* line_p) {

@@ -53,6 +53,16 @@ chrom_alignments_t* chrom_alignments_realloc(chrom_alignments_t* chrom_alignment
     memcpy(chrom_alignments_p->indices_p, aux_indices_p, chrom_alignments_p->allocated_alignment * sizeof(int));
 
     chrom_alignments_p->allocated_alignment = num_alignments;
+    
+    //free the previous mallocs pointed by the aux pointers
+    for (int i = 0; i < chrom_alignments_p->alignment_count; i++) {
+        if (aux_alignments_p[i] == NULL) {
+            bam_destroy1(aux_alignments_p[i]);
+	}
+    }
+    free(aux_alignments_p);
+    free(aux_coordinates_p);
+    free(aux_indices_p);
 
     return chrom_alignments_p;
 }
@@ -60,6 +70,10 @@ chrom_alignments_t* chrom_alignments_realloc(chrom_alignments_t* chrom_alignment
 void chrom_alignments_free(chrom_alignments_t* chrom_alignments_p) {
     if (chrom_alignments_p != NULL) {
         if (chrom_alignments_p->bam_alignments_p != NULL) {
+            for (int i = 0; i < chrom_alignments_p->alignment_count; i++) {
+                  bam_destroy1(chrom_alignments_p->bam_alignments_p[i]);
+            }
+
             free(chrom_alignments_p->bam_alignments_p);
         }
 
@@ -126,6 +140,7 @@ void alignments_list_free(alignments_list_t* list_p) {
             free(list_p->chromosomes_p);
         }
         free(list_p);
+        list_p = NULL;
     }
 }
 

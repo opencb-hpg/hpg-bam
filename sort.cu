@@ -158,7 +158,11 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
 
     for (int i = 0; i < num_of_chromosomes; i++) {
         bam_writer_join(bam_split_writer_p[i]);
+        bam_writer_free(bam_split_writer_p[i], 0);
     }
+
+    bam_reader_free(bam_first_reader_p);
+    free(bam_split_writer_p);
 
     // second phase: one-reader vs one-writer
     // one-reader is in charged of reading all segmented-files
@@ -179,7 +183,7 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
         bam_split_reader_p = bam_reader_new(split_filename[i], batch_size, 0, list_p, SEQUENTIAL_MODE, SORT_BY_POSITION, i);
         bam_reader_start(bam_split_reader_p);
         num_aligments_read = bam_reader_join(bam_split_reader_p);
-        //bam_reader_free(bam_split_reader_p);
+        bam_reader_free(bam_split_reader_p);
     }
 
     bam_reader_alive = 0;
@@ -190,8 +194,10 @@ void sort_bam_file_by_id(size_t batch_size, char* input_filename, char* output_d
         remove(split_filename[i]);
         free(split_filename[i]);
     }
+    free(split_filename);
 
     alignments_list_free(list_p);
+    bam_writer_free(bam_sorted_writer_p, 0);
 }
 
 void sort_dataset_by_id(char* dataset_input, char* output_directory) {

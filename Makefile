@@ -10,7 +10,7 @@ XML_LIB = /usr/include/libxml2
 
 LIB = libs
 
-NVCC_DISCOVER = $(shell expr `which nvcc | wc -l` \> 0)
+NVCC_DISCOVER = $(shell expr `which nvcc | wc -l` \> 10)
 
 ALL = hpg-bam
 
@@ -39,7 +39,7 @@ hpg-bam: commons-objects bam_hpc_tools_main.o hpg-bam-objects containers-objects
         bam_data_batch.o sort_thrust.o qc_kernel_omp.o gff_data.o gff_reader.o alignment.o region_table.o region.o \
         GeneralHashFunctions.o $(CUDA_OBJECTS) -o $(BIN)/hpg-bam -L$(LIB) -lbam -lz -I$(XML_LIB) -lxml2 -lcurl -lcprops
 
-commons-objects: 
+commons-objects: clean-commons-objects
 	(cd $(COMMONS_LIB); $(MAKE) file_utils.o system_utils.o string_utils.o log.o)
 
 convert.o: convert.c convert.h *.h

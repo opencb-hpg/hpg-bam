@@ -104,7 +104,7 @@ void filter_bam_by_chromosome(char* bam_input, char* output_directory, short int
     int read_bytes, num_write_alignments = 0;
     bam1_t* bam_p = bam_init1();
     char* bam_output;
-    
+
     //open BAM file for read
     if (time_flag) {
         start_timer(t1_filter);
@@ -121,7 +121,7 @@ void filter_bam_by_chromosome(char* bam_input, char* output_directory, short int
 
     get_filename_from_path(bam_input, in_shortname);
     bam_output = (char*) calloc((strlen(output_directory) + strlen(in_shortname) + strlen(str_chr_suffix) + 10), sizeof(char));
-    
+
     sprintf(bam_output, "%s/%s.%s%hi", output_directory, in_shortname, str_chr_suffix, chromosome);
     
     char log_message[200];
@@ -159,13 +159,14 @@ void filter_bam_by_chromosome(char* bam_input, char* output_directory, short int
     bam_slice_file_p->bam_header_p = NULL; //it has been freed in the former line
     bam_fclose(bam_slice_file_p);
     bam_destroy1(bam_p);
+    free(bam_output);
     if (time_flag) {
         stop_timer(t1_filter, t2_filter, filter_time);
     }
 
     //number_of_batchs = 1, convention value for statistics (not real batch)
     number_of_batchs = 1;
-
+    
     LOG_DEBUG("FILTER-END: filter bam by chromosome ended\n");
 }
 

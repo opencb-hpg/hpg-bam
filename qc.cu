@@ -117,7 +117,7 @@ void* qc_calc_server(void* params_p) {
         int num_alignments = bam_data_batch_p->num_alignments;
         int num_blocks;
 
-//cpu_num_threads = 1;
+        //cpu_num_threads = 1;
         if (cpu_num_threads == 0) {  // GPU implementation
             num_blocks = (num_alignments / input_p->gpu_num_threads) + 1;
 
@@ -428,6 +428,8 @@ void* results_server(void* params_p) {
     //iteration until not NULL is returned, then process batch
     while ((item_p = list_remove_item(&bam_qc_batch_list)) != NULL) {
         bam_qc_batch_p = (bam_qc_batch_t*) item_p->data_p;
+        list_item_free(item_p);
+
         //printf("while... gpus_alive: %i, cpus_alive: %i, bam_qc_batch_p is NULL: %i\n", gpus_alive, cpus_alive, (bam_qc_batch_p == NULL) ? 1:0);
         if ((time_flag) && (results_standby_time == 0.0)) {
             stop_timer(t1_active_reader, t1_active_results, results_standby_time);
