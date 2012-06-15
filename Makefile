@@ -10,15 +10,17 @@ XML_LIB = /usr/include/libxml2
 
 LIB = libs
 
-NVCC_DISCOVER = $(shell expr `which nvcc | wc -l` \> 10)
+NVCC_DISCOVER = $(shell expr `which nvcc | wc -l` \> 0)
 
 ALL = hpg-bam
 
 CC = gcc
+#CC = /home/vrequena/third_party/llvm-build/Release+Asserts/bin/clang -faddress-sanitizer -O1 -fno-omit-frame-pointer -g
 CXX = g++ -fopenmp 
 CFLAGS = -O3 -Wall -std=c99
 #CFLAGS = -O0 -g -Wall -std=c99
 #CFLAGS = -DVERBOSE_DBG -Wall -std=c99
+
 
 CINCLUDES = -I. -I/opt/cuda/include -I./samtools-0.1.18/ -I$(BAM_LIB) -I$(COMMONS_LIB) -I$(COMMONS_CUDA_LIB) -I$(CONTAINERS_LIB) -I$(REGIONS_LIB) -lcprops
 CUINCLUDES = -I. -I./samtools-0.1.18/ -I$(BAM_LIB) -I$(COMMONS_LIB) -I$(COMMONS_CUDA_LIB) -I$(CONTAINERS_LIB)
@@ -33,11 +35,23 @@ ifeq ($(NVCC_DISCOVER), 1)
 CUDA_OBJECTS = qc_kernel_cuda.o cuda_commons.o
 endif
 
+ifeq ($(NVCC_DISCOVER), 1)
+
 hpg-bam: commons-objects bam_hpc_tools_main.o hpg-bam-objects containers-objects region-objects qc.o sort.o sort_thrust.o convert.o $(CUDA_OBJECTS)
 	$(NVCC) $(NVCCFLAGS) $(COMMONS_LIB)/*.o bam_hpc_tools_main.o aligner_dataset.o aligner_dataset_file.o bam_file.o bam_reader.o bam_writer.o \
         bam_qc_batch.o bam_qc_report.o bam_coverage.o chrom_alignments.o convert.o qc.o qc_hash.o qc_hash_list.o list.o sort.o \
         bam_data_batch.o sort_thrust.o qc_kernel_omp.o gff_data.o gff_reader.o alignment.o region_table.o region.o \
         GeneralHashFunctions.o $(CUDA_OBJECTS) -o $(BIN)/hpg-bam -L$(LIB) -lbam -lz -I$(XML_LIB) -lxml2 -lcurl -lcprops
+
+else
+
+hpg-bam: commons-objects bam_hpc_tools_main.o hpg-bam-objects containers-objects region-objects qc.o sort.o sort_thrust.o convert.o $(CUDA_OBJECTS)
+	$(CXX) $(CFLAGS) $(COMMONS_LIB)/*.o bam_hpc_tools_main.o aligner_dataset.o aligner_dataset_file.o bam_file.o bam_reader.o bam_writer.o \
+        bam_qc_batch.o bam_qc_report.o bam_coverage.o chrom_alignments.o convert.o qc.o qc_hash.o qc_hash_list.o list.o sort.o \
+        bam_data_batch.o sort_thrust.o qc_kernel_omp.o gff_data.o gff_reader.o alignment.o region_table.o region.o \
+        GeneralHashFunctions.o $(CUDA_OBJECTS) -o $(BIN)/hpg-bam -L$(LIB) -lbam -lz -I$(XML_LIB) -lxml2 -lcurl -lcprops
+
+endif
 
 commons-objects: clean-commons-objects
 	(cd $(COMMONS_LIB); $(MAKE) file_utils.o system_utils.o string_utils.o log.o)
@@ -71,7 +85,7 @@ sort.o: sort.c sort.h *.h
 	$(CC) $(CFLAGS) -c sort.c $(CINCLUDES)
 
 sort_thrust.o: sort_thrust.c *.h
-	$(CXX) $(CFLAGS) -c sort_thrust.c $(CINCLUDES)
+	$(CXX) $(CFLAGS) -c sort_thrust.c -DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP $(CINCLUDES)
 
 endif
 

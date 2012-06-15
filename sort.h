@@ -2,7 +2,9 @@
 #ifndef SORT_H
 #define SORT_H
 
-#include "cuda_commons.h"
+#ifdef CUDA_VERSION
+    #include "cuda_commons.h"
+#endif
 
 #define SORTED_FILE_SUFFIX ".sorted"
 

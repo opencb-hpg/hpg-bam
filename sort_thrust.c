@@ -45,7 +45,7 @@ void sort_dataset_list_by_id(aligner_dataset_list_t* list_p) {
 void sort_key_value(int* keys, int* values, int length) {
     thrust::host_vector<int> h_key(length);
     thrust::host_vector<int> h_value(length);
-
+    
     //fill the host vector
     for (int i = 0 ; i < length ; i++) {
         h_key[i] = keys[i];
@@ -64,7 +64,7 @@ void sort_key_value(int* keys, int* values, int length) {
     for (int i = 0 ; i < length ; i++) {
         keys[i] = h_key[i];
         values[i] = h_value[i];
-    }
+    }    
 }
 
 void sort_key_value_char(char** keys, int* values, int length) {
