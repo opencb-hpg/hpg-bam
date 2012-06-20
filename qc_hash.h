@@ -3,6 +3,7 @@
 #define QC_HASH_H
 
 #include <pthread.h>
+#include <cprops/trie.h>
 
 #include "bam_qc_report.h"
 #include "commons.h"
@@ -120,7 +121,7 @@ void qc_hash_unlock(qc_hash_t* qc_hash_p);
 *  
 *  Inserts an aligment into the qc hash
 */
-void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end);
+void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end, cp_trie* test_trie);
 
 /**
 *  @brief Prints a qc hash 

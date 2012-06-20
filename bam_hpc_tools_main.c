@@ -11,6 +11,7 @@
 #include "convert.h"
 #include "file_utils.h"
 #include "log.h"
+#include "map_validation.h"
 #include "qc.h"
 #include "sam.h"
 #include "sort.h"
@@ -34,10 +35,12 @@
 
 #define DEFAULT_BASE_QUALITY   		PHRED33
 
-#define BAM_GPU_TOOLS_USAGE_HELP "USAGE: bam-gpu-tools [--qc] [--sort] [--filter] --bam <bam_file> --outdir </path/to/dir> [--sam <sam_file> --to-sam | --to-bam] \
+#define HPG_BAM_TOOLS_USAGE_HELP "USAGE: bam-gpu-tools [--qc] [--sort] [--filter] [--validate] --bam <bam_file> --outdir </path/to/dir> [--sam <sam_file> --to-sam | --to-bam] \
 [--max-distance-size <max_distance_in_nts>] [--phred-quality <33|64|sanger|solexa>] [--conf <config_filename>] [--gff <gff_filename>] [--chr | --chromosome] \
+{--dna | --rna} {--soft | --hard} {--ref-align <align_file> | --ref-bam <bam_file> } [--logfile file.log] \
 [--gpu-num-blocks <num_blocks>] [--gpu-num-threads <num_threads>] [--gpu-num-devices <num_devices>] [--cpu-num-threads <num_threads>] \
 [--batch-size] [--batch-list-size] [--log-level <1-5>] [--log-file <log_filename>] [--verbose] [--t | --time] \n"
+
 
 /* **********************************************
  *      	Global variables    		*
@@ -101,7 +104,7 @@ unsigned long mean_coverage = 0;
 
 int num_of_chromosomes = 0;
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) { 
     // setting global variables for logger
     log_level = LOG_DEFAULT_LEVEL;
     verbose = 1;
@@ -148,6 +151,14 @@ int main(int argc, char **argv) {
     int min_mismatches = DEFAULT_MIN_MISMATCHES;
     int max_mismatches = DEFAULT_MAX_MISMATCHES;
     int filter_chromosome = 0;
+    
+    //variables to store validation parameters
+    int align_bam = 0;
+    int dna_rna = 0;
+    int soft_hard = 0;
+    char* ref_file = NULL;  //can be a bam file or an alignment dataset
+    char* bam_files = NULL;
+    char* wrong_mapped_filename = NULL;
 
     //variables for long_options
     int c;
@@ -203,13 +214,20 @@ int main(int argc, char **argv) {
         {"chr",   required_argument, 0, 'C'},
         {"chromosome",   required_argument, 0, 'C'},	
 
-        /* Validate BAM  */
-        {"validate",         no_argument, 0, 'D'},
-        {"dataset",    required_argument, 0, 'E'},
-
         /* Sort dataset  */
-        {"sort-dataset",         no_argument, 0, 'F'},
+        {"sort-dataset",         no_argument, 0, 'D'},
+        {"dataset",              required_argument, 0, 'E'},
 
+        /* Validate BAM  */
+        {"validate",	no_argument, 0, 'F'},
+        {"ref-align",	required_argument, 0, 'G'},
+        {"ref-bam", 	required_argument, 0, 'H'},
+        {"bam-files",	required_argument, 0, 'I'},
+        {"results-file",	required_argument, 0, 'J'},
+        {"dna",		no_argument, 0, 'K'},
+        {"rna",		no_argument, 0, 'L'},
+        {"soft",	no_argument, 0, 'M'},
+        {"hard",	no_argument, 0, 'N'},
         {0, 0, 0, 0}
     };
 
@@ -251,7 +269,7 @@ int main(int argc, char **argv) {
 
     // validation of no argument launch
     if (argc < 2) {
-        printf(BAM_GPU_TOOLS_USAGE_HELP);
+        printf(HPG_BAM_TOOLS_USAGE_HELP);
         exit(0);
     }
 
@@ -424,8 +442,8 @@ int main(int argc, char **argv) {
             case 'r':
                 //printf("option --gff with value '%s'\n", optarg);
                 if (gff_input == NULL) {
-		    gff_input = (char*) calloc(strlen(optarg) + 1, sizeof(char));
-		    strcpy(gff_input, optarg);
+                    gff_input = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+                    strcpy(gff_input, optarg);
                 }
                 break;
 
@@ -531,16 +549,15 @@ int main(int argc, char **argv) {
                     if (is_numeric(optarg) == 1) {
                         sscanf(optarg, "%i", &filter_chromosome);
                     } else {
-		        filter_chromosome = 1;
+                        filter_chromosome = 1;
                         LOG_INFO("--chromosomes is not a valid number, assuming default value 1\n");
                     }
                 }
                 break;
 
-            /* VALIDATE BAM PARAMETERS  */
             case 'D':
-                //printf("option --validate selected, performing BAM validation\n");
-                filter_step = 1;
+                //printf("option --sort-dataset selected, performing dataset sorting\n");
+                sort_dataset_step = 1;
                 break;
 
             case 'E':
@@ -551,9 +568,66 @@ int main(int argc, char **argv) {
                 }
                 break;
 
+            /* VALIDATE BAM PARAMETERS  */
             case 'F':
                 //printf("option --validate selected, performing BAM validation\n");
-                sort_dataset_step = 1;
+                validate_step = 1;
+                break;
+
+            case 'G':
+                //printf("option --ref-align selected, validating against a dataset file\n");
+                ref_file = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+                strcpy(ref_file,optarg);
+                align_bam = 0;  //ref-align
+                break;
+
+            case 'H':
+                //printf("option --bam-align selected, validating against a BAM file\n");
+                ref_file = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+                strcpy(ref_file,optarg);
+                align_bam = 1;  //bam-align
+                break;
+
+            case 'I':
+                //printf("option --bam-files with value '%s'\n", optarg);
+                bam_files = (char*) calloc(strlen(optarg) + 1, sizeof(char));
+                strcpy(bam_files, optarg);
+                break;
+
+            case 'J':
+                //printf("option --results-file with value '%s'\n", optarg);
+                wrong_mapped_filename = (char*) calloc(strlen(optarg) +1, sizeof(char));
+                strcpy(wrong_mapped_filename,optarg);
+                break;
+
+            case 'K':
+                //printf("option --dna selected, considering dna validation\n");
+                if(dna_rna == 0) {
+                    dna_rna = 1;
+                } else {
+                    printf(HPG_BAM_TOOLS_USAGE_HELP);
+                    LOG_FATAL("you must choose only one option --dna or --rna for format validation\n");
+                }
+                break;
+
+            case 'L':
+                //printf("option --rna selected, considering rna validation\n");
+                if(dna_rna == 0) {
+                    dna_rna = 2;
+                } else {
+                    printf(HPG_BAM_TOOLS_USAGE_HELP);
+                    LOG_FATAL("you must choose only one option --dna or --rna for format validation\n");
+                }
+                break;
+
+            case 'M':
+                //printf("option --soft selected, validating only chromosome, position and strad values\n");
+                //soft_hard = 0 set in initialization, nothing to do
+                break;
+
+            case 'N':
+                //printf("option --hard selected, validating all fields values\n");
+                soft_hard = 1;
                 break;
 
             case ':':       /* option without mandatory operand */
@@ -561,11 +635,11 @@ int main(int argc, char **argv) {
                 break;
 
             case '?':
-                printf(BAM_GPU_TOOLS_USAGE_HELP);
+                printf(HPG_BAM_TOOLS_USAGE_HELP);
                 break;
 
             default:
-                printf(BAM_GPU_TOOLS_USAGE_HELP);
+                printf(HPG_BAM_TOOLS_USAGE_HELP);
                 LOG_FATAL("Default case of parameters parsing. Aborting program");
         }
     }
@@ -632,65 +706,67 @@ int main(int argc, char **argv) {
     }
 
     // validating that minimal input parameters are filled
-    // output directory and a bam file are mandatory
-    if ((!convert_step) && (output_directory == NULL)) {
+    // output directory and a bam file are mandatory in almost cases
+    if ((output_directory == NULL) && (!(convert_step || validate_step))) {
         printf("--outdir option is mandatory\n");
-        printf(BAM_GPU_TOOLS_USAGE_HELP);
+        printf(HPG_BAM_TOOLS_USAGE_HELP);
         exit(0);
     }
 
-    if ((bam_input == NULL) && (!sort_dataset_step)) {
+    if ((bam_input == NULL) && (!(sort_dataset_step || validate_step))) {
         printf("--bam option is mandatory\n");
-        printf(BAM_GPU_TOOLS_USAGE_HELP);
+        printf(HPG_BAM_TOOLS_USAGE_HELP);
         exit(0);
     }
 
     // only one direction can be converted BAM -> SAM or SAM -> BAM, not both
     if ((to_sam_flag) && (to_bam_flag)) {
         to_sam_flag = 0;
-        printf(BAM_GPU_TOOLS_USAGE_HELP);
+        printf(HPG_BAM_TOOLS_USAGE_HELP);
         LOG_WARN("both conversion directions are selected, assuming --to-bam option\n");
     }
 
     // if BAM <-> SAM conversion is activated both SAM and BAM files must be informed
     if (convert_step) {
         if ((sam_input == NULL) || (bam_input == NULL)) {
-            printf(BAM_GPU_TOOLS_USAGE_HELP);
+            printf(HPG_BAM_TOOLS_USAGE_HELP);
             LOG_FATAL("conversion option is activated, --sam and --bam options are both mandatory\n");
         }
     }
 
-    // validating BAM file according to initial dataset
-    if (validate_step) {
+    // both dataset file and output directory are mandatory for sorting dataset
+    if (sort_dataset_step) {
         if (dataset_input == NULL) {
-            printf(BAM_GPU_TOOLS_USAGE_HELP);
-            LOG_FATAL("validate BAM option is activated, --dataset option is mandatory\n");
-        } else if (bam_input == NULL) {
-            printf(BAM_GPU_TOOLS_USAGE_HELP);
-            LOG_FATAL("validate BAM option is activated, --bam option is mandatory\n");
-        } else if (output_directory == NULL) {
-            printf(BAM_GPU_TOOLS_USAGE_HELP);
-            LOG_FATAL("validate BAM option is activated, --outdir option is mandatory\n");
-        }
-    }
-
-    // both dataset file and output directory are mandatory for sorting dataset and validate BAM
-    if ((sort_dataset_step) || (validate_step)) {
-        if (dataset_input == NULL) {
-            printf(BAM_GPU_TOOLS_USAGE_HELP);
+            printf(HPG_BAM_TOOLS_USAGE_HELP);
             LOG_FATAL("sort dataset option is activated, --dataset option is mandatory\n");
         } else if (output_directory == NULL) {
-            printf(BAM_GPU_TOOLS_USAGE_HELP);
+            printf(HPG_BAM_TOOLS_USAGE_HELP);
             LOG_FATAL("validate BAM option is activated, --outdir option is mandatory\n");
         }
     }
 
     //bam input file is mandatory for its validation
     if (validate_step) {
-        if (bam_input == NULL) {
-            printf(BAM_GPU_TOOLS_USAGE_HELP);
-            LOG_FATAL("validate BAM option is activated, --bam option is mandatory\n");
+        if ((bam_input != NULL) && (bam_files == NULL)) {
+              bam_files = bam_input;
         }
+      
+        if (bam_files == NULL) {
+            printf(HPG_BAM_TOOLS_USAGE_HELP);
+            LOG_FATAL("validate BAM option is activated, --bam-files option is mandatory\n");
+        }
+        
+        if (ref_file == NULL) {
+            printf(HPG_BAM_TOOLS_USAGE_HELP);
+            LOG_FATAL("validate BAM option is activated, --ref_file option is mandatory\n");
+        }        
+
+        if (dna_rna == 0){
+            printf(HPG_BAM_TOOLS_USAGE_HELP);
+            LOG_FATAL("you must choose --dna or --rna validation type\n");
+        }
+        
+        //output directory is not mandatory for validation
     }
 
     // listh length must be at least 4
@@ -704,7 +780,7 @@ int main(int argc, char **argv) {
         printf("no valid options: ");
         while (optind < argc) printf("%s ", argv[optind++]);
         printf("\n");
-        printf(BAM_GPU_TOOLS_USAGE_HELP);
+        printf(HPG_BAM_TOOLS_USAGE_HELP);
     }
 
     // aplying heuristic values if default values have not been modified
@@ -752,7 +828,7 @@ int main(int argc, char **argv) {
     }
 
     if (validate_step) {
-        //validate_bam_file(bam_input, dataset_input, output_directory);
+        bam_map_validate(dna_rna, align_bam, soft_hard, bam_files, ref_file, wrong_mapped_filename);
     }
 
     if (sort_dataset_step) {
@@ -803,13 +879,37 @@ int main(int argc, char **argv) {
     }
 
     //free memory
-    if (log_filename != NULL) free(log_filename);
-    if (argv_from_file_options != NULL) free(argv_from_file_options);
-    if (sam_input != NULL) free(sam_input);
-    if (bam_input != NULL) free(bam_input);
-    if (output_directory != NULL) free(output_directory);
-    if (gff_input != NULL) free(gff_input);
-    if (dataset_input != NULL) free(dataset_input);
+    if (log_filename != NULL) { 
+        free(log_filename);
+    }
+    if (argv_from_file_options != NULL) {
+        free(argv_from_file_options);
+    }
+    if (sam_input != NULL) {
+        free(sam_input);
+    }
+    if (bam_input != NULL) {
+        free(bam_input);
+        bam_input == NULL;
+    }
+    if (output_directory != NULL) {
+        free(output_directory);
+    }
+    if (gff_input != NULL) {
+        free(gff_input);
+    }
+    if (dataset_input != NULL) {
+        free(dataset_input);
+    }
+    if (ref_file != NULL) {
+        free(ref_file);
+    }
+    if (bam_files != NULL) {
+        free(bam_files);
+    }
+    if (wrong_mapped_filename != NULL) {
+        free(wrong_mapped_filename);
+    }
 
     return 1;
 }

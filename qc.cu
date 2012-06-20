@@ -224,6 +224,9 @@ void* qc_calc_server(void* params_p) {
  * *****************************************************/
 
 void* cpus_server(void* params_p) {
+
+    cp_trie* test_trie = cp_trie_create(0);  
+
     double coverage_time = 0.0;
     struct timeval t1_coverage, t2_coverage;
 
@@ -300,7 +303,7 @@ void* cpus_server(void* params_p) {
             seq_length = core_data_p->alignment_length;
             paired_end = core_data_p->paired_end;
 
-            qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end);
+            qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end, test_trie);
         }
 
         //if (time_flag) { 
