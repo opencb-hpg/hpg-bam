@@ -3,7 +3,6 @@
 #define QC_HASH_H
 
 #include <pthread.h>
-#include <cprops/trie.h>
 
 #include "bam_qc_report.h"
 #include "commons.h"
@@ -29,8 +28,6 @@
 
 #define COUNT_INCR1( count )  count++
 #define COUNT_INCR2( count )  count += 256
-
-#define MAX_MAPPING_COUNT_IN_HISTOGRAM 10
 
 /* **************************************
  *    		Structures  		*
@@ -121,7 +118,7 @@ void qc_hash_unlock(qc_hash_t* qc_hash_p);
 *  
 *  Inserts an aligment into the qc hash
 */
-void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end, cp_trie* test_trie);
+void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end);
 
 /**
 *  @brief Prints a qc hash 

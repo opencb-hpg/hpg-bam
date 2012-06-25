@@ -5,8 +5,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <cprops/trie.h>
+
 #include "cuda_commons.h"
 #include "list.h"
+#include "mappings_db.h"
 #include "qc_hash.h"
 
 #define VALID_ALIGNMENT_FILE_SUFFIX	".valid"

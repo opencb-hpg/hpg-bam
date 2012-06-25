@@ -10,6 +10,7 @@
 #include "commons.h"
 #include "convert.h"
 #include "file_utils.h"
+#include "filter.h"
 #include "log.h"
 #include "map_validation.h"
 #include "qc.h"
@@ -145,12 +146,14 @@ int main(int argc, char **argv) {
     int sort_by_id_flag = 1;
 
     // variables to store filter parameters
-    int max_num_hits = DEFAULT_MAX_NUM_HITS;
-    int min_quality = DEFAULT_MIN_QUALITY;
-    int max_quality = DEFAULT_MAX_QUALITY;
-    int min_mismatches = DEFAULT_MIN_MISMATCHES;
-    int max_mismatches = DEFAULT_MAX_MISMATCHES;
-    int filter_chromosome = 0;
+    int filter_max_num_hits = DEFAULT_MAX_NUM_HITS;
+    int filter_min_quality = -1;
+    int filter_max_quality = DEFAULT_MAX_QUALITY;
+    int filter_min_mismatches = DEFAULT_MIN_MISMATCHES;
+    int filter_max_mismatches = -1;
+    short int filter_chromosome = -1;
+    int filter_min_length = -1;
+    int filter_max_distance = -1;
     
     //variables to store validation parameters
     int align_bam = 0;
@@ -212,22 +215,24 @@ int main(int argc, char **argv) {
         {"min-mismatches",   required_argument, 0, 'A'},
         {"max-mismatches",   required_argument, 0, 'B'},
         {"chr",   required_argument, 0, 'C'},
-        {"chromosome",   required_argument, 0, 'C'},	
+        {"chromosome",   required_argument, 0, 'C'},
+        {"min-length",   required_argument, 0, 'D'},
+        {"max-distance",   required_argument, 0, 'E'},
 
         /* Sort dataset  */
-        {"sort-dataset",         no_argument, 0, 'D'},
-        {"dataset",              required_argument, 0, 'E'},
+        {"sort-dataset",         no_argument, 0, 'F'},
+        {"dataset",              required_argument, 0, 'G'},
 
         /* Validate BAM  */
-        {"validate",	no_argument, 0, 'F'},
-        {"ref-align",	required_argument, 0, 'G'},
-        {"ref-bam", 	required_argument, 0, 'H'},
-        {"bam-files",	required_argument, 0, 'I'},
-        {"results-file",	required_argument, 0, 'J'},
-        {"dna",		no_argument, 0, 'K'},
-        {"rna",		no_argument, 0, 'L'},
-        {"soft",	no_argument, 0, 'M'},
-        {"hard",	no_argument, 0, 'N'},
+        {"validate",	no_argument, 0, 'H'},
+        {"ref-align",	required_argument, 0, 'I'},
+        {"ref-bam", 	required_argument, 0, 'J'},
+        {"bam-files",	required_argument, 0, 'K'},
+        {"results-file",	required_argument, 0, 'L'},
+        {"dna",		no_argument, 0, 'M'},
+        {"rna",		no_argument, 0, 'N'},
+        {"soft",	no_argument, 0, 'O'},
+        {"hard",	no_argument, 0, 'P'},
         {0, 0, 0, 0}
     };
 
@@ -249,7 +254,7 @@ int main(int argc, char **argv) {
             int num_conf_lines = count_lines(argv[i+1]);
 
             argv_with_file_options = (char **)malloc((argc + 2 * num_conf_lines) * sizeof(char *));
-            array_concat(argv_with_file_options, argc, (const char**)argv, 2*num_conf_lines, (const char**)argv_from_file_options);
+            array_concat(argv_with_file_options, argc, (const char**)argv, 2 * num_conf_lines, (const char**) argv_from_file_options);
 
             char command_line[1024];
             strcpy(command_line, "Command line: ");
@@ -490,9 +495,9 @@ int main(int argc, char **argv) {
 
             case 'x':
                 //printf("option --max-num-hits with value '%s'\n", optarg);
-                if (max_num_hits == 0) {
+                if (filter_max_num_hits == 0) {
                     if (is_numeric(optarg) == 1) {
-                        sscanf(optarg, "%i", &max_num_hits);
+                        sscanf(optarg, "%i", &filter_max_num_hits);
                     } else {
                         LOG_WARN("--max-num-hits is not a valid number, assuming default value 10\n");
                     }
@@ -501,9 +506,9 @@ int main(int argc, char **argv) {
 
             case 'y':
                 //printf("option --min-quality with value '%s'\n", optarg);
-                if (min_quality == 0) {
+                if (filter_min_quality == -1) {
                     if (is_numeric(optarg) == 1) {
-                        sscanf(optarg, "%i", &min_quality);
+                        sscanf(optarg, "%i", &filter_min_quality);
                     } else {
                         LOG_WARN("--min-quality is not a valid number, assuming default value 0\n");
                     }
@@ -512,9 +517,9 @@ int main(int argc, char **argv) {
 
             case 'z':
                 //printf("option --max-quality with value '%s'\n", optarg);
-                if (max_quality == 0) {
+                if (filter_max_quality == 0) {
                     if (is_numeric(optarg) == 1) {
-                        sscanf(optarg, "%i", &max_quality);
+                        sscanf(optarg, "%i", &filter_max_quality);
                     } else {
                         LOG_WARN("--max-quality is not a valid number, assuming default value 255\n");
                     }
@@ -523,9 +528,9 @@ int main(int argc, char **argv) {
 
             case 'A':
                 //printf("option --min-mismatches with value '%s'\n", optarg);
-                if (min_mismatches == 0) {
+                if (filter_min_mismatches == 0) {
                     if (is_numeric(optarg) == 1) {
-                        sscanf(optarg, "%i", &min_mismatches);
+                        sscanf(optarg, "%i", &filter_min_mismatches);
                     } else {
                         LOG_INFO("--min-mismatches is not a valid number, assuming default value 0\n");
                     }
@@ -534,9 +539,9 @@ int main(int argc, char **argv) {
 
             case 'B':
                 //printf("option --max-mismatches with value '%s'\n", optarg);
-                if (max_mismatches == 0) {
+                if (filter_max_mismatches == -1) {
                     if (is_numeric(optarg) == 1) {
-                        sscanf(optarg, "%i", &max_mismatches);
+                        sscanf(optarg, "%i", &filter_max_mismatches);
                     } else {
                         LOG_WARN("--max-mismatches is not a valid number, assuming default value 4\n");
                     }
@@ -545,7 +550,7 @@ int main(int argc, char **argv) {
 
             case 'C':
                 //printf("option --chromosome with value '%s'\n", optarg);
-                if (filter_chromosome == 0) {
+                if (filter_chromosome == -1) {
                     if (is_numeric(optarg) == 1) {
                         sscanf(optarg, "%i", &filter_chromosome);
                     } else {
@@ -556,11 +561,33 @@ int main(int argc, char **argv) {
                 break;
 
             case 'D':
+                //printf("option --min-length with value '%s'\n", optarg);
+                if (filter_min_length == -1) {
+                    if (is_numeric(optarg) == 1) {
+                        sscanf(optarg, "%i", &filter_min_length);
+                    } else {
+                        LOG_INFO("--min-length is not a valid number, assuming no length filter\n");
+                    }
+                }
+                break;
+
+            case 'E':
+                //printf("option --max-distance with value '%s'\n", optarg);
+                if (filter_max_distance == -1) {
+                    if (is_numeric(optarg) == 1) {
+                        sscanf(optarg, "%i", &filter_max_distance);
+                    } else {
+                        LOG_INFO("--max-distance is not a valid number, assuming no distance filter\n");
+                    }
+                }
+                break;
+
+            case 'F':
                 //printf("option --sort-dataset selected, performing dataset sorting\n");
                 sort_dataset_step = 1;
                 break;
 
-            case 'E':
+            case 'G':
                 //printf("option --dataset with value '%s'\n", optarg);
                 if (dataset_input == NULL) {
                     dataset_input = (char*) calloc(strlen(optarg) + 1, sizeof(char));
@@ -569,38 +596,38 @@ int main(int argc, char **argv) {
                 break;
 
             /* VALIDATE BAM PARAMETERS  */
-            case 'F':
+            case 'H':
                 //printf("option --validate selected, performing BAM validation\n");
                 validate_step = 1;
                 break;
 
-            case 'G':
+            case 'I':
                 //printf("option --ref-align selected, validating against a dataset file\n");
                 ref_file = (char*) calloc(strlen(optarg) + 1, sizeof(char));
                 strcpy(ref_file,optarg);
                 align_bam = 0;  //ref-align
                 break;
 
-            case 'H':
+            case 'J':
                 //printf("option --bam-align selected, validating against a BAM file\n");
                 ref_file = (char*) calloc(strlen(optarg) + 1, sizeof(char));
                 strcpy(ref_file,optarg);
                 align_bam = 1;  //bam-align
                 break;
 
-            case 'I':
+            case 'K':
                 //printf("option --bam-files with value '%s'\n", optarg);
                 bam_files = (char*) calloc(strlen(optarg) + 1, sizeof(char));
                 strcpy(bam_files, optarg);
                 break;
 
-            case 'J':
+            case 'L':
                 //printf("option --results-file with value '%s'\n", optarg);
                 wrong_mapped_filename = (char*) calloc(strlen(optarg) +1, sizeof(char));
                 strcpy(wrong_mapped_filename,optarg);
                 break;
 
-            case 'K':
+            case 'M':
                 //printf("option --dna selected, considering dna validation\n");
                 if(dna_rna == 0) {
                     dna_rna = 1;
@@ -610,7 +637,7 @@ int main(int argc, char **argv) {
                 }
                 break;
 
-            case 'L':
+            case 'N':
                 //printf("option --rna selected, considering rna validation\n");
                 if(dna_rna == 0) {
                     dna_rna = 2;
@@ -620,12 +647,12 @@ int main(int argc, char **argv) {
                 }
                 break;
 
-            case 'M':
+            case 'O':
                 //printf("option --soft selected, validating only chromosome, position and strad values\n");
                 //soft_hard = 0 set in initialization, nothing to do
                 break;
 
-            case 'N':
+            case 'P':
                 //printf("option --hard selected, validating all fields values\n");
                 soft_hard = 1;
                 break;
@@ -782,6 +809,11 @@ int main(int argc, char **argv) {
         printf("\n");
         printf(HPG_BAM_TOOLS_USAGE_HELP);
     }
+    
+    // validate that at least one filter criteria is entered
+    if ((filter_step) && (filter_max_mismatches == -1) && (filter_chromosome == -1) && (filter_min_length == -1) && (filter_min_quality == -1) && (filter_max_distance == -1)) {
+        LOG_FATAL("at least one filter criteria (chromosome, alignment length, quality or distance between paired ends) must be provided");
+    }
 
     // aplying heuristic values if default values have not been modified
     if (batch_size == 1000000 * DEFAULT_BATCH_SIZE_MB) {
@@ -822,8 +854,9 @@ int main(int argc, char **argv) {
     }
 
     if (filter_step) {
+        filter_bam_by_criteria(bam_input, output_directory, filter_max_mismatches, filter_chromosome, filter_min_length, filter_min_quality, filter_max_distance);
         if (filter_chromosome != 0) {
-            filter_bam_by_chromosome(bam_input, output_directory, filter_chromosome);
+            //filter_bam_by_chromosome(bam_input, output_directory, filter_chromosome);
         }
     }
 

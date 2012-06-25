@@ -53,7 +53,7 @@ void qc_hash_unlock(qc_hash_t* qc_hash_p) {
     pthread_mutex_unlock(&(qc_hash_p->lock));
 }
 
-void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end, cp_trie* test_trie) {
+void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int start_coordinate, int seq_length, short int paired_end) {
     unsigned int alignment_hash;
     qc_hash_list_item_t* found_item_p = qc_hash_find_id_seq_(qc_hash_p, id_seq, &alignment_hash);
 
@@ -61,12 +61,6 @@ void qc_hash_insert_alignment(qc_hash_t* qc_hash_p, char* id_seq, int tid, int s
         qc_hash_update_id_seq_(found_item_p, id_seq, tid, start_coordinate, seq_length, paired_end);
     } else {
         qc_hash_insert_id_seq_(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end, alignment_hash);
-
-        //insert in trie structure
-        //cp_trie_add(test_trie, id_seq, NULL);
-
-        //insert in SQLite 
-
     }
 }
 

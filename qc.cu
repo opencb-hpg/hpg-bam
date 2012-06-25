@@ -225,7 +225,48 @@ void* qc_calc_server(void* params_p) {
 
 void* cpus_server(void* params_p) {
 
-    cp_trie* test_trie = cp_trie_create(0);  
+    // ---- Testing trie and SQLite -------------------------------
+    cp_trie* test_trie = cp_trie_create(0);
+    const char* error_msg; 
+
+    int ret_code;
+    sqlite3 *db;
+
+    cpus_server_input_t* aux_input_p = (cpus_server_input_t*) params_p;
+
+    // Remove all .db files in folder
+//     ret_code = delete_files_by_extension(params_p->output_directory, "db");
+//     if (ret_code != 0) {
+//         LOG_FATAL("Cannot delete .db files in folder");
+//     }
+    char* db_file = (char*) calloc(500, sizeof(char));
+    sprintf(db_file, "%s/%s", aux_input_p->output_directory, "mappings.db");
+    remove(db_file);
+
+    // create mapping database
+    //ret_code = create_mappings_database(&db, (const char*) aux_input_p->output_directory, 0);
+    ret_code = create_complete_mappings_database(&db, (const char*) aux_input_p->output_directory, 0);
+    if (ret_code != SQLITE_OK) {
+        printf("ret_code = %d, reason: %s\n", ret_code, sqlite3_errmsg(db));
+        LOG_FATAL("Can't create temporary database for calculating mapping histogram. Reason:\n");
+        sqlite3_close(db);
+    }
+
+    // create and prepare queries
+    sqlite3_stmt* insert_mapping_stmt;
+    sqlite3_stmt* insert_complete_mapping_stmt;
+    char insert_mapping_buffer[] = "INSERT INTO mappings VALUES (?1, ?2)";
+    char insert_complete_mapping_buffer[] = "INSERT INTO mappings VALUES (?1, ?2, ?3, ?4, ?5)";
+    sqlite3_prepare_v2(db, insert_mapping_buffer, -1, &insert_mapping_stmt, NULL);
+    sqlite3_prepare_v2(db, insert_complete_mapping_buffer, -1, &insert_complete_mapping_stmt, NULL);
+
+    // start transaction
+    char* zErrMsg;
+    //sqlite3_exec(db, "PRAGMA cache_size=16000", NULL, NULL, &zErrMsg);
+    //sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &zErrMsg);
+
+    // ---- Testing trie and SQLite -------------------------------
+
 
     double coverage_time = 0.0;
     struct timeval t1_coverage, t2_coverage;
@@ -303,7 +344,14 @@ void* cpus_server(void* params_p) {
             seq_length = core_data_p->alignment_length;
             paired_end = core_data_p->paired_end;
 
-            qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end, test_trie);
+            qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end);
+
+            //insert in trie structure
+            //cp_trie_add(test_trie, id_seq, NULL);
+
+            //insert in SQLite
+            //insert_mapping(db, id_seq, paired_end, insert_mapping_stmt);
+            //insert_complete_mapping(db, id_seq, paired_end, tid, start_coordinate, seq_length, insert_mapping_stmt);
         }
 
         //if (time_flag) { 
@@ -384,6 +432,32 @@ void* cpus_server(void* params_p) {
     if (time_flag) {
         stop_timer(t1_cpus_server, t2_cpus_server, cpus_server_time);
     }
+
+    // ---- Testing trie and SQLite -------------------------------
+
+    //sqlite3_finalize(insert_mapping_stmt);
+
+    int* num_mappings_histogram_test = (int*) calloc(MAX_MAPPING_COUNT_IN_HISTOGRAM + 2, sizeof(int));
+
+    //num_mappings_histogram_test = get_num_mappings_histogram(db, num_mappings_histogram_test);
+
+    for (int i = 0; i < (MAX_MAPPING_COUNT_IN_HISTOGRAM + 2); i++) {
+        printf("num_mappings_histogram_test[%i]: %i\n", i, num_mappings_histogram_test[i]);
+    }
+
+    //sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &zErrMsg);
+
+    ret_code = sqlite3_close(db);
+
+    if (ret_code != SQLITE_OK) {
+        LOG_WARN("Temporary database could not be closed");
+        printf("closing reason: %s\n", sqlite3_errmsg(db));
+    }
+
+    free(num_mappings_histogram_test);
+
+    // ---- Testing trie and SQLite -------------------------------
+
 
     LOG_DEBUG("Thread-CPU: END\n");
 

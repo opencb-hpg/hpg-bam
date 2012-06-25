@@ -17,6 +17,8 @@
 
 #define MAX_ALIGNMENT_LENGTH 1000
 
+#define MAX_MAPPING_COUNT_IN_HISTOGRAM 10
+
 /* **************************************************************
  *    		Global structures and variables   		*
  * *************************************************************/
