@@ -5,6 +5,7 @@ COMMONS_CUDA_LIB = libs/commons-cuda
 CONTAINERS_LIB = libs/containers
 REGIONS_LIB = libs/bioformats/features/region
 SQLITE_LIB = sqlite
+THRUST_LIB = thrust
 
 SAMTOOLS_LIB = samtools-0.1.18
 BAM_LIB = libs/bioformats/bam-sam
@@ -23,7 +24,7 @@ CXX = g++ -fopenmp
 CFLAGS = -O0 -g -Wall -std=c99 -D_XOPEN_SOURCE=500
 #CFLAGS = -DVERBOSE_DBG -Wall -std=c99 -D_XOPEN_SOURCE=500
 
-CINCLUDES = -I. -I/opt/cuda/include -I$(SAMTOOLS_LIB) -I$(BAM_LIB) -I$(COMMONS_LIB) -I$(COMMONS_CUDA_LIB) -I$(CONTAINERS_LIB) -I$(REGIONS_LIB) -I$(SQLITE_LIB) -lcprops
+CINCLUDES = -I. -I/opt/cuda/include -I$(SAMTOOLS_LIB) -I$(BAM_LIB) -I$(COMMONS_LIB) -I$(COMMONS_CUDA_LIB) -I$(CONTAINERS_LIB) -I$(REGIONS_LIB) -I$(SQLITE_LIB) -I$(THRUST_LIB) -lcprops
 CUINCLUDES = -I. -I$(SAMTOOLS_LIB) -I$(BAM_LIB) -I$(COMMONS_LIB) -I$(COMMONS_CUDA_LIB) -I$(CONTAINERS_LIB) -I$(SQLITE_LIB)
 
 NVCC = nvcc

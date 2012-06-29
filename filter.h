@@ -33,6 +33,6 @@ void filter_bam_by_chromosome(char* bam_input, char* output_directory, short int
 *  Filter a BAM file using input criteria (chromosome, alignment length, quality and/or 
 *  distance between paired ends), output BAM is written to disk
 */
-void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mismatches, short int chromosome, int min_length, int min_quality, int max_distance);
+void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mismatches, short int chromosome, int min_length, int min_quality, int max_quality, int max_distance);
 
 #endif /* FILTER_H */

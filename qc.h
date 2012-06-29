@@ -45,6 +45,7 @@ typedef struct qc_calc_server_input {
 typedef struct cpus_server_input {
     int cpu_num_threads;			/**< Number of CPU threads. */
     int max_distance_size;			/**< Max. distance to consider between pairend-end mappings. */
+    int disk_flag;				/**< Flag indicating usage of disk for mapping histogram and mean paired end distance calculation. */
     list_t* cpu_batch_list_p;			/**< Pointer to the cpu batch list. */
     qc_mapping_counter_t* qc_mapping_counter;	/**< Pointer to qc mapping counter. */
     char* gff_filename;				/**< GFF file name. */
@@ -86,6 +87,6 @@ typedef struct results_server_input {
 *  
 *  Performs quality control of a BAM file (highest level function)
 */
-void qc_bam_file(size_t batch_size, int batch_list_size, int gpu_num_threads, int gpu_num_blocks, int cpu_num_threads, int base_quality, int max_distance_size, char* input_filename, char* output_directory, char* gff_filename);
+void qc_bam_file(size_t batch_size, int batch_list_size, int gpu_num_threads, int gpu_num_blocks, int cpu_num_threads, int base_quality, int max_distance_size, char* input_filename, char* output_directory, char* gff_filename, int disk_flag);
 
 #endif  /* QC_H */

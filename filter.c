@@ -11,7 +11,7 @@
 int write_bam_by_mismatches_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int max_mismatches);
 int write_bam_by_chromosome_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, short int chromosome);
 int write_bam_by_length_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int min_length);
-int write_bam_by_quality_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int min_quality);
+int write_bam_by_quality_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int min_quality, int max_quality);
 int write_bam_by_distance_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int max_distance);
 int write_bam_by_criteria_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, short int chromosome, int min_length, int min_quality, int max_distance);
 int num_errors_from_cigar_(uint32_t* cigar, int num_cigar_operations);
@@ -78,7 +78,7 @@ void filter_bam_by_chromosome(char* bam_input, char* output_directory, short int
     LOG_DEBUG("FILTER-END: filter bam by chromosome ended\n");
 }
 
-void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mismatches, short int chromosome, int min_length, int min_quality, int max_distance) {
+void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mismatches, short int chromosome, int min_length, int min_quality, int max_quality, int max_distance) {
     char* bam_output;
     int num_of_filtering_criteria = 0;
     
@@ -92,7 +92,7 @@ void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mis
     if (min_length != -1) {
         num_of_filtering_criteria++;
     }
-    if (min_quality != -1) {
+    if ((min_quality != -1) || (max_quality != -1)) {
         num_of_filtering_criteria++;
     }
     if (max_distance != -1) {
@@ -122,8 +122,12 @@ void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mis
         sprintf(bam_output, "%s/%s.%s%hi", output_directory, in_shortname, "chr", chromosome);
     } else if ((num_of_filtering_criteria == 1) && (min_length != -1)) {
         sprintf(bam_output, "%s/%s.%s%i", output_directory, in_shortname, "minlength", min_length);
+    } else if ((num_of_filtering_criteria == 1) && (min_quality != -1) && (max_quality != -1)) {
+        sprintf(bam_output, "%s/%s.%s[%i,%i]", output_directory, in_shortname, "qualityrange", min_quality, max_quality);
     } else if ((num_of_filtering_criteria == 1) && (min_quality != -1)) {
         sprintf(bam_output, "%s/%s.%s%i", output_directory, in_shortname, "minquality", min_quality);
+    } else if ((num_of_filtering_criteria == 1) && (max_quality != -1)) {
+        sprintf(bam_output, "%s/%s.%s%i", output_directory, in_shortname, "maxquality", max_quality);
     } else if ((num_of_filtering_criteria == 1) && (max_distance != -1)) {
         sprintf(bam_output, "%s/%s.%s%i", output_directory, in_shortname, "maxdistance", max_distance);
     } else if (num_of_filtering_criteria > 1) {        
@@ -131,7 +135,7 @@ void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mis
     }
     
     char log_message[200];
-    sprintf(log_message, "FILTER-START: filter bam by chromosome %i in output file %s\n", chromosome, bam_output);
+    sprintf(log_message, "FILTER-START: filter bam in output file %s\n", bam_output);
     LOG_DEBUG(log_message);
     
     bam_file_t* bam_slice_file_p = bam_fopen_mode(bam_output, bam_header_p, "w");
@@ -145,13 +149,6 @@ void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mis
     //write header text to SAM file
     bam_header_write(bam_slice_file_p->bam_fd, bam_header_p);
     
-    printf("FILTERING CRITERIA:\n");
-    printf("max_mismatches: %i\n", max_mismatches);
-    printf("chromosome: %i\n", chromosome);
-    printf("min_length: %i\n", min_length);
-    printf("min_quality: %i\n", min_quality);
-    printf("max_distance: %i\n", max_distance);
-    
     //if exists a filter by chromosome it must be decreased by 1
     if (chromosome != -1) {
         chromosome--;  //chromosome minus 1 for matching
@@ -164,8 +161,8 @@ void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mis
         write_bam_by_chromosome_(bam_file_p, bam_slice_file_p, chromosome);    
     } else if ((num_of_filtering_criteria == 1) && (min_length != -1)) {
         write_bam_by_length_(bam_file_p, bam_slice_file_p, min_length);    
-    } else if ((num_of_filtering_criteria == 1) && (min_quality != -1)) {
-        write_bam_by_quality_(bam_file_p, bam_slice_file_p, min_quality);    
+    } else if ((num_of_filtering_criteria == 1) && ((min_quality != -1) || (max_quality != -1))) {
+        write_bam_by_quality_(bam_file_p, bam_slice_file_p, min_quality, max_quality);    
     } else if ((num_of_filtering_criteria == 1) && (max_distance != -1)) {
         write_bam_by_distance_(bam_file_p, bam_slice_file_p, max_distance);    
     } else if (num_of_filtering_criteria > 1) {        
@@ -192,7 +189,8 @@ void filter_bam_by_criteria(char* bam_input, char* output_directory, int max_mis
  * *************************************************************/
 
 int write_bam_by_mismatches_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int max_mismatches) {
-printf("FILTERING BY MISMATCHES\n");    
+    LOG_DEBUG("FILTER: by number of mismatches\n");
+    
     bam1_t* bam_p = bam_init1();
     int read_bytes, num_write_alignments = 0;
 
@@ -206,13 +204,13 @@ printf("FILTERING BY MISMATCHES\n");
     }
 
     bam_destroy1(bam_p);
-    printf("num_alignments: %i, num_write_alignments: %i\n", num_alignments, num_write_alignments);
 
     return num_write_alignments;  
 }
 
 int write_bam_by_chromosome_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, short int chromosome) {
-printf("FILTERING BY CHROMOSOME\n");    
+    LOG_DEBUG("FILTER: by chromosome\n");
+    
     bam1_t* bam_p = bam_init1();
     int read_bytes, num_write_alignments = 0;
 
@@ -226,13 +224,13 @@ printf("FILTERING BY CHROMOSOME\n");
     }
 
     bam_destroy1(bam_p);
-    printf("num_alignments: %i, num_write_alignments: %i\n", num_alignments, num_write_alignments);
 
     return num_write_alignments;
 }
 
 int write_bam_by_length_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int min_length) {
-printf("FILTERING BY LENGTH\n");    
+    LOG_DEBUG("FILTER: by length\n");
+    
     bam1_t* bam_p = bam_init1();
     int read_bytes, num_write_alignments = 0;
 
@@ -246,18 +244,23 @@ printf("FILTERING BY LENGTH\n");
     }
 
     bam_destroy1(bam_p);
-    printf("num_alignments: %i, num_write_alignments: %i\n", num_alignments, num_write_alignments);
 
     return num_write_alignments;
 }
 
-int write_bam_by_quality_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int min_quality) {
-printf("FILTERING BY QUALITY\n");    
+int write_bam_by_quality_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int min_quality, int max_quality) {
+    LOG_DEBUG("FILTER: by quality\n");
+   
     bam1_t* bam_p = bam_init1();
     int read_bytes, num_write_alignments = 0;
+    
+    // if max_quality is not informed max value is assumed 
+    if (max_quality == -1) {
+        max_quality = 256;  // max value of the quality
+    }
 
     while ((read_bytes = bam_read1(bam_file_p->bam_fd, bam_p)) > 0) {
-        if (bam_p->core.qual >= min_quality) {
+        if ((bam_p->core.qual >= min_quality) && (bam_p->core.qual <= max_quality)) {
             bam_write1(bam_slice_file_p->bam_fd, bam_p);
             num_write_alignments++;
         }
@@ -272,13 +275,14 @@ printf("FILTERING BY QUALITY\n");
 } 
 
 int write_bam_by_distance_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, int max_distance) {
-printf("FILTERING BY DISTANCE\n");    
+    LOG_DEBUG("FILTER: by distance between paired ends\n");
+    
     bam1_t* bam_p = bam_init1();
     int read_bytes, num_write_alignments = 0;
 
     while ((read_bytes = bam_read1(bam_file_p->bam_fd, bam_p)) > 0) {
         //if ((bam_p->core.flag & BAM_FPROPER_PAIR) && (abs(bam_p->core.pos - bam_p->core.mpos) <= max_distance)) {
-        if ((bam_p->core.flag & BAM_FPROPER_PAIR) && (bam_p->core.isize <= max_distance)) {
+        if ((bam_p->core.flag & BAM_FPROPER_PAIR) && (abs(bam_p->core.isize) <= max_distance)) {
             bam_write1(bam_slice_file_p->bam_fd, bam_p);
             num_write_alignments++;
         }
@@ -287,13 +291,13 @@ printf("FILTERING BY DISTANCE\n");
     }
 
     bam_destroy1(bam_p);
-    printf("num_alignments: %i, num_write_alignments: %i\n", num_alignments, num_write_alignments);
 
     return num_write_alignments;
 }
         
 int write_bam_by_criteria_(bam_file_t* bam_file_p, bam_file_t* bam_slice_file_p, short int chromosome, int min_length, int min_quality, int max_distance) {
-printf("FILTERING BY CRITERIA\n");  
+    LOG_DEBUG("FILTER: by several criteria\n");
+  
     bam1_t* bam_p = bam_init1();
     int read_bytes, num_write_alignments = 0, criteria_failed = 0;
 
@@ -321,7 +325,6 @@ printf("FILTERING BY CRITERIA\n");
     }
 
     bam_destroy1(bam_p);
-    printf("num_alignments: %i, num_write_alignments: %i\n", num_alignments, num_write_alignments);
 
     return num_write_alignments;
 }
@@ -345,6 +348,6 @@ int num_errors_from_cigar_(uint32_t* cigar_p, int num_cigar_operations) {
                  break;
         }
     }    
-//if (num_errors > 0) printf("num_errors: %i\n", num_errors);
+
     return num_errors;
 }

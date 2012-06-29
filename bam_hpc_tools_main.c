@@ -76,6 +76,9 @@ struct timeval t1_filter, t2_filter;
 double reporting_time = 0.0;
 struct timeval t1_reporting, t2_reporting;
 
+double db_time = 0.0;
+struct timeval t1_db, t2_db;
+
 double reader_server_time = 0.0;
 struct timeval t1_reader_server, t2_reader_server;
 
@@ -148,7 +151,7 @@ int main(int argc, char **argv) {
     // variables to store filter parameters
     int filter_max_num_hits = DEFAULT_MAX_NUM_HITS;
     int filter_min_quality = -1;
-    int filter_max_quality = DEFAULT_MAX_QUALITY;
+    int filter_max_quality = -1;
     int filter_min_mismatches = DEFAULT_MIN_MISMATCHES;
     int filter_max_mismatches = -1;
     short int filter_chromosome = -1;
@@ -163,6 +166,9 @@ int main(int argc, char **argv) {
     char* bam_files = NULL;
     char* wrong_mapped_filename = NULL;
 
+    //flag to indicate disk operation for QC mapping histogran and mean paired end distance
+    int disk_flag = 0;    
+    
     //variables for long_options
     int c;
     int option_index = 0;
@@ -233,6 +239,8 @@ int main(int argc, char **argv) {
         {"rna",		no_argument, 0, 'N'},
         {"soft",	no_argument, 0, 'O'},
         {"hard",	no_argument, 0, 'P'},
+
+        {"disk",	no_argument, 0, 'Q'},
         {0, 0, 0, 0}
     };
 
@@ -510,18 +518,18 @@ int main(int argc, char **argv) {
                     if (is_numeric(optarg) == 1) {
                         sscanf(optarg, "%i", &filter_min_quality);
                     } else {
-                        LOG_WARN("--min-quality is not a valid number, assuming default value 0\n");
+                        LOG_WARN("--min-quality is not a valid number, assuming no filter by min quality\n");
                     }
                 }
                 break;
 
             case 'z':
                 //printf("option --max-quality with value '%s'\n", optarg);
-                if (filter_max_quality == 0) {
+                if (filter_max_quality == -1) {
                     if (is_numeric(optarg) == 1) {
                         sscanf(optarg, "%i", &filter_max_quality);
                     } else {
-                        LOG_WARN("--max-quality is not a valid number, assuming default value 255\n");
+                        LOG_WARN("--max-quality is not a valid number, assuming no filter by max quality\n");
                     }
                 }
                 break;
@@ -655,6 +663,11 @@ int main(int argc, char **argv) {
             case 'P':
                 //printf("option --hard selected, validating all fields values\n");
                 soft_hard = 1;
+                break;
+
+            case 'Q':
+                //printf("option --disk selected, calculating QC partially on disk database\n");
+                disk_flag = 1;
                 break;
 
             case ':':       /* option without mandatory operand */
@@ -811,7 +824,7 @@ int main(int argc, char **argv) {
     }
     
     // validate that at least one filter criteria is entered
-    if ((filter_step) && (filter_max_mismatches == -1) && (filter_chromosome == -1) && (filter_min_length == -1) && (filter_min_quality == -1) && (filter_max_distance == -1)) {
+    if ((filter_step) && (filter_max_mismatches == -1) && (filter_chromosome == -1) && (filter_min_length == -1) && (filter_min_quality == -1) && (filter_max_quality == -1) && (filter_max_distance == -1)) {
         LOG_FATAL("at least one filter criteria (chromosome, alignment length, quality or distance between paired ends) must be provided");
     }
 
@@ -850,11 +863,11 @@ int main(int argc, char **argv) {
     }
 
     if (qc_step) {
-        qc_bam_file(batch_size, batch_list_size, gpu_num_threads, gpu_num_blocks, cpu_num_threads, base_quality, max_distance_size, bam_input, output_directory, gff_input);
+        qc_bam_file(batch_size, batch_list_size, gpu_num_threads, gpu_num_blocks, cpu_num_threads, base_quality, max_distance_size, bam_input, output_directory, gff_input, disk_flag);
     }
 
     if (filter_step) {
-        filter_bam_by_criteria(bam_input, output_directory, filter_max_mismatches, filter_chromosome, filter_min_length, filter_min_quality, filter_max_distance);
+        filter_bam_by_criteria(bam_input, output_directory, filter_max_mismatches, filter_chromosome, filter_min_length, filter_min_quality, filter_max_quality, filter_max_distance);
         if (filter_chromosome != 0) {
             //filter_bam_by_chromosome(bam_input, output_directory, filter_chromosome);
         }
@@ -898,6 +911,10 @@ int main(int argc, char **argv) {
         if (convert_step) {
             printf("total convert time (s): \t%10.5f\n", 0.000001 * convert_time);
         }
+        
+        if (qc_step && disk_flag)  {
+            printf("total database time (s): \t%10.5f\n", 0.000001 * db_time);
+        }        
 
         printf("\n----------- elapsed server times -----------\n\n");
         printf("reader server time (s): \t%10.5f\n", 0.000001 * reader_server_time);

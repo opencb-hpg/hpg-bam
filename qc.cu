@@ -224,50 +224,6 @@ void* qc_calc_server(void* params_p) {
  * *****************************************************/
 
 void* cpus_server(void* params_p) {
-
-    // ---- Testing trie and SQLite -------------------------------
-    cp_trie* test_trie = cp_trie_create(0);
-    const char* error_msg; 
-
-    int ret_code;
-    sqlite3 *db;
-
-    cpus_server_input_t* aux_input_p = (cpus_server_input_t*) params_p;
-
-    // Remove all .db files in folder
-//     ret_code = delete_files_by_extension(params_p->output_directory, "db");
-//     if (ret_code != 0) {
-//         LOG_FATAL("Cannot delete .db files in folder");
-//     }
-    char* db_file = (char*) calloc(500, sizeof(char));
-    sprintf(db_file, "%s/%s", aux_input_p->output_directory, "mappings.db");
-    remove(db_file);
-
-    // create mapping database
-    //ret_code = create_mappings_database(&db, (const char*) aux_input_p->output_directory, 0);
-    ret_code = create_complete_mappings_database(&db, (const char*) aux_input_p->output_directory, 0);
-    if (ret_code != SQLITE_OK) {
-        printf("ret_code = %d, reason: %s\n", ret_code, sqlite3_errmsg(db));
-        LOG_FATAL("Can't create temporary database for calculating mapping histogram. Reason:\n");
-        sqlite3_close(db);
-    }
-
-    // create and prepare queries
-    sqlite3_stmt* insert_mapping_stmt;
-    sqlite3_stmt* insert_complete_mapping_stmt;
-    char insert_mapping_buffer[] = "INSERT INTO mappings VALUES (?1, ?2)";
-    char insert_complete_mapping_buffer[] = "INSERT INTO mappings VALUES (?1, ?2, ?3, ?4, ?5)";
-    sqlite3_prepare_v2(db, insert_mapping_buffer, -1, &insert_mapping_stmt, NULL);
-    sqlite3_prepare_v2(db, insert_complete_mapping_buffer, -1, &insert_complete_mapping_stmt, NULL);
-
-    // start transaction
-    char* zErrMsg;
-    //sqlite3_exec(db, "PRAGMA cache_size=16000", NULL, NULL, &zErrMsg);
-    //sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &zErrMsg);
-
-    // ---- Testing trie and SQLite -------------------------------
-
-
     double coverage_time = 0.0;
     struct timeval t1_coverage, t2_coverage;
 
@@ -295,8 +251,26 @@ void* cpus_server(void* params_p) {
     // delete previous coverage file to append new data
     bam_coverage_counter_delete_file(output_directory, input_filename);
 
-    // variables for store intermediate and output results in both CPU and GPU
-    qc_hash_t* qc_hash_p = (qc_hash_t*) qc_hash_new(QC_HASH_LENGTH);
+    // creating trie
+    //cp_trie* test_trie = cp_trie_create(0);
+    
+    sqlite3* db;
+    sqlite3_stmt* insert_complete_mapping_stmt;
+    qc_hash_t* qc_hash_p;
+
+    if (input_p->disk_flag) {  //disk implementation: sqlite
+        // create tables
+        mapping_db_create_complete_mappings_database(&db, (const char*) input_p->output_directory, 0);
+
+        // create and prepare queries
+        insert_complete_mapping_stmt = mapping_db_prepare_insert_complete(db);
+    
+        // start transaction
+        mapping_db_begin_transaction(db);
+    } else { //memory implementation: custom hash table
+        // variables for store intermediate and output results in both CPU and GPU
+        qc_hash_p = (qc_hash_t*) qc_hash_new(QC_HASH_LENGTH);
+    }
 
     // variables for coverage (regions data)
     bam_chromosome_coverage_t bam_chromosome_coverage[num_of_chromosomes];
@@ -330,41 +304,46 @@ void* cpus_server(void* params_p) {
         }
 
         char* id_seq;
-        int tid, start_coordinate, seq_length;
+        int tid, mtid, isize, start_coordinate, seq_length;
         short int paired_end;
         bam_data_core_t* core_data_p;
 
-        for (int i = 0; i < bam_data_batch_p->num_alignments; i++) {
-            id_seq = &(bam_data_batch_p->id_seq_data_p[bam_data_batch_p->core_data_p[i].id_seq_index]);
+        if (input_p->disk_flag) {  // duplicate code for performance, disk implementation
+            for (int i = 0; i < bam_data_batch_p->num_alignments; i++) {
+                id_seq = &(bam_data_batch_p->id_seq_data_p[bam_data_batch_p->core_data_p[i].id_seq_index]);
 
-            core_data_p = &(bam_data_batch_p->core_data_p[i]);
+                core_data_p = &(bam_data_batch_p->core_data_p[i]);
+                tid = core_data_p->chromosome;
+                mtid = core_data_p->mate_chromosome;
+                isize = core_data_p->isize;
+                start_coordinate = core_data_p->start_coordinate;
+                seq_length = core_data_p->alignment_length;
+                paired_end = core_data_p->paired_end;
 
-            tid = core_data_p->chromosome;
-            start_coordinate = core_data_p->start_coordinate;
-            seq_length = core_data_p->alignment_length;
-            paired_end = core_data_p->paired_end;
+                // insert in SQLite
+                mapping_db_insert_complete(db, id_seq, paired_end, tid, mtid, isize, start_coordinate, seq_length, insert_complete_mapping_stmt);
+            }
+        } else {  // memory implementation
+            for (int i = 0; i < bam_data_batch_p->num_alignments; i++) {
+                id_seq = &(bam_data_batch_p->id_seq_data_p[bam_data_batch_p->core_data_p[i].id_seq_index]);
 
-            qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end);
+                core_data_p = &(bam_data_batch_p->core_data_p[i]);
+                tid = core_data_p->chromosome;
+                start_coordinate = core_data_p->start_coordinate;
+                seq_length = core_data_p->alignment_length;
+                paired_end = core_data_p->paired_end;
 
-            //insert in trie structure
-            //cp_trie_add(test_trie, id_seq, NULL);
+                // insert in qc hash
+                qc_hash_insert_alignment(qc_hash_p, id_seq, tid, start_coordinate, seq_length, paired_end);    
 
-            //insert in SQLite
-            //insert_mapping(db, id_seq, paired_end, insert_mapping_stmt);
-            //insert_complete_mapping(db, id_seq, paired_end, tid, start_coordinate, seq_length, insert_mapping_stmt);
+                // insert in trie structure
+                //cp_trie_add(test_trie, id_seq, NULL);
+            }  
         }
-
-        //if (time_flag) { 
-        //    start_timer(t1_coverage); 
-        //}
 
         if (gff_data_batch_in_region(bam_data_batch_p, gff_data_p) != 0) {
             bam_coverage_compute(bam_data_batch_p, bam_chromosome_coverage, gff_data_p, output_directory, input_filename, cpu_num_threads);
         }
-
-        //if (time_flag) { 
-        //    stop_timer(t1_coverage, t2_coverage, coverage_time); 
-        //}
 
         if (time_flag) {
             stop_timer(t1_cpu, t2_cpu, cpu_time);
@@ -393,37 +372,45 @@ void* cpus_server(void* params_p) {
 
     unsigned long mean_paired_end_distance = 0;
 
-    if (time_flag) {
-        start_timer(t1_cpu);
+
+    if (!input_p->disk_flag) {
+        if (time_flag) {
+            start_timer(t1_cpu);
+        }
+        
+        qc_hash_perform_calculations(qc_hash_p, qc_mapping_counter_p, &mean_paired_end_distance, max_distance_size, cpu_num_threads);
+        qc_hash_free(qc_hash_p, true);
+
+        if (time_flag) {
+            stop_timer(t1_cpu, t2_cpu, cpu_time);
+        }
     }
 
-    qc_hash_perform_calculations(qc_hash_p, qc_mapping_counter_p, &mean_paired_end_distance, max_distance_size, cpu_num_threads); //--
+    if (input_p->disk_flag) {
+        if (time_flag) {
+            start_timer(t1_db);
+        }
+        
+        mapping_db_end_transaction(db);
+        //sqlite3_finalize(insert_complete_mapping_stmt);
+        //mapping_db_create_indexes(&db);
+        mapping_db_perform_calculations(db, max_distance_size, qc_mapping_counter_p->num_mappings_histogram, &mean_paired_end_distance);
+        mapping_db_close(db);
+
+        if (time_flag) {
+            stop_timer(t1_db, t2_db, db_time);
+        }      
+    }
 
     qc_mapping_counter_p->mean_paired_end_distance = mean_paired_end_distance;
-    if (time_flag) {
-        stop_timer(t1_cpu, t2_cpu, cpu_time);
-    }
 
     //free qc hash structure, gff data and chromosome coverage
     for (int j = 0; j < num_of_chromosomes; j++) {
         bam_chromosome_coverage_clear(&bam_chromosome_coverage[j]);
     }
 
-    qc_hash_free(qc_hash_p, true);
+    //qc_hash_free(qc_hash_p, true);
     gff_data_free(gff_data_p);
-
-    // --------------- D E B U G ----------------
-
-    printf("--------------- D E B U G ----------------\n");
-
-    for (int i = 0; i <= (MAX_MAPPING_COUNT_IN_HISTOGRAM + 1); i++) {
-        printf("qc_mapping_counter_p->num_mappings_histogram[%i]: %i\n", i, qc_mapping_counter_p->num_mappings_histogram[i]);
-    }
-    printf("mean_paired_end_distance: %ld\n\n", qc_mapping_counter_p->mean_paired_end_distance);
-
-    printf("--------------- D E B U G ----------------\n");
-
-    // --------------- D E B U G ----------------
 
     pthread_mutex_lock(&cpus_thread_alive_lock);
     cpus_thread_alive--;
@@ -433,31 +420,16 @@ void* cpus_server(void* params_p) {
         stop_timer(t1_cpus_server, t2_cpus_server, cpus_server_time);
     }
 
-    // ---- Testing trie and SQLite -------------------------------
+    // --------------- D E B U G ----------------
+    printf("--------------- D E B U G ----------------\n");
 
-    //sqlite3_finalize(insert_mapping_stmt);
-
-    int* num_mappings_histogram_test = (int*) calloc(MAX_MAPPING_COUNT_IN_HISTOGRAM + 2, sizeof(int));
-
-    //num_mappings_histogram_test = get_num_mappings_histogram(db, num_mappings_histogram_test);
-
-    for (int i = 0; i < (MAX_MAPPING_COUNT_IN_HISTOGRAM + 2); i++) {
-        printf("num_mappings_histogram_test[%i]: %i\n", i, num_mappings_histogram_test[i]);
+    for (int i = 0; i <= (MAX_MAPPING_COUNT_IN_HISTOGRAM + 1); i++) {
+        printf("qc_mapping_counter_p->num_mappings_histogram[%i]: %i\n", i, qc_mapping_counter_p->num_mappings_histogram[i]);
     }
+    printf("mean_paired_end_distance: %ld\n\n", qc_mapping_counter_p->mean_paired_end_distance);
 
-    //sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &zErrMsg);
-
-    ret_code = sqlite3_close(db);
-
-    if (ret_code != SQLITE_OK) {
-        LOG_WARN("Temporary database could not be closed");
-        printf("closing reason: %s\n", sqlite3_errmsg(db));
-    }
-
-    free(num_mappings_histogram_test);
-
-    // ---- Testing trie and SQLite -------------------------------
-
+    printf("--------------- D E B U G ----------------\n");
+    // --------------- D E B U G ----------------
 
     LOG_DEBUG("Thread-CPU: END\n");
 
@@ -546,7 +518,6 @@ void* results_server(void* params_p) {
             stop_timer(t1_result, t2_result, result_time);
         }
 
-
         // getting gpus and cpus thread status
         pthread_mutex_lock(&gpus_thread_alive_lock);
         gpus_alive = gpus_thread_alive;
@@ -624,7 +595,7 @@ void* results_server(void* params_p) {
  *    		Public functions implementations 		*
  * *************************************************************/
 
-void qc_bam_file(size_t batch_size, int batch_list_size, int gpu_num_threads, int gpu_num_blocks, int cpu_num_threads, int base_quality, int max_distance_size, char* input_filename, char* output_directory, char* gff_filename) {
+void qc_bam_file(size_t batch_size, int batch_list_size, int gpu_num_threads, int gpu_num_blocks, int cpu_num_threads, int base_quality, int max_distance_size, char* input_filename, char* output_directory, char* gff_filename, int disk_flag) {
     // number of GPUs is obtained, and initializes the number of GPU threads 'alive'
     int num_gpu_devices;
     cudaError_t cudaResultCode = cudaGetDeviceCount(&num_gpu_devices);
@@ -713,6 +684,7 @@ void qc_bam_file(size_t batch_size, int batch_list_size, int gpu_num_threads, in
         cpus_server_input_p->gff_filename = gff_filename;
         cpus_server_input_p->output_directory = output_directory;
         cpus_server_input_p->input_filename = input_filename;
+        cpus_server_input_p->disk_flag = disk_flag;
 
         pthread_create(&cpus_server_thread_p[i], NULL, cpus_server, (void*) cpus_server_input_p);
     }
