@@ -132,11 +132,11 @@ int main (int argc, char *argv[]) {
     init_log_custom(opts->log_level, 1, "hpg-bam.log", "w");
 
     // create db table and hash
-    khash_t(str) *hash = NULL;
+    khash_t(stats_chunks) *hash = NULL;
     sqlite3 *db = NULL;
     //    sqlite3_stmt *stmt = NULL;
     if (opts->db) {
-      hash = kh_init(str);
+      hash = kh_init(stats_chunks);
       create_stats_db(opts->out_dbname, BAM_CHUNKSIZE, create_bam_query_fields, &db);
       //      prepare_statement_bam_query_fields(db, &stmt);
     }
@@ -170,7 +170,7 @@ int main (int argc, char *argv[]) {
 
       // finally, close db and free hash
       sqlite3_close(db);
-      kh_destroy(str, hash); 
+      kh_destroy(stats_chunks, hash); 
     }
 
     /*
