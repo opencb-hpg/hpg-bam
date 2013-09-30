@@ -13,7 +13,7 @@ extern void usage_argtable(char *exec_name, char *command_name, void **argtable)
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
-index_options_t *new_index_options(char *exec_name, char *command_name) {
+index_options_t *index_options_new(char *exec_name, char *command_name) {
   index_options_t *opts = (index_options_t*) calloc (1, sizeof(index_options_t));
   
   opts->help = 0;
@@ -27,11 +27,11 @@ index_options_t *new_index_options(char *exec_name, char *command_name) {
 
 //------------------------------------------------------------------------
 
-index_options_t *parse_index_options(char *exec_name, char *command_name,
+index_options_t *index_options_parse(char *exec_name, char *command_name,
 				     int argc, char **argv) {
   void **argtable = new_argtable_index_options();
   
-  index_options_t *opts = new_index_options(exec_name, command_name);
+  index_options_t *opts = index_options_new(exec_name, command_name);
   if (argc < 2) {
     usage_argtable(exec_name, command_name, argtable);
   } else {  
@@ -60,7 +60,7 @@ index_options_t *parse_index_options(char *exec_name, char *command_name,
 
 //------------------------------------------------------------------------
 
-void free_index_options(index_options_t *opts) {
+void index_options_free(index_options_t *opts) {
   if (opts == NULL) { return; }
   
   if (opts->in_filename) { free(opts->in_filename); }
@@ -73,7 +73,7 @@ void free_index_options(index_options_t *opts) {
 
 //------------------------------------------------------------------------
 
-void validate_index_options(index_options_t *opts) {
+void index_options_validate(index_options_t *opts) {
   if (! exists(opts->in_filename)) {
     printf("\nError: Input file name not found !\n\n");
     usage_index_options(opts);
@@ -86,7 +86,7 @@ void validate_index_options(index_options_t *opts) {
 
 //------------------------------------------------------------------------
 
-void display_index_options(index_options_t *opts) {
+void index_options_display(index_options_t *opts) {
   printf("PARAMETERS CONFIGURATION\n");
   printf("=================================================\n");
   printf("Main options\n");

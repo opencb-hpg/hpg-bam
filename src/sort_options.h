@@ -40,16 +40,16 @@ typedef struct sort_options {
 
 //------------------------------------------------------------------------
 
-sort_options_t *new_sort_options(char *exec_name, char *command_nane);
+sort_options_t *sort_options_new(char *exec_name, char *command_nane);
 
-sort_options_t *parse_sort_options(char *exec_name, char *command_nane,
+sort_options_t *sort_options_parse(char *exec_name, char *command_nane,
 				     int argc, char **argv);
 
-void free_sort_options(sort_options_t *opts);
+void sort_options_free(sort_options_t *opts);
 
-void validate_sort_options(sort_options_t *opts);
+void sort_options_validate(sort_options_t *opts);
 
-void display_sort_options(sort_options_t *opts);
+void sort_options_display(sort_options_t *opts);
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------

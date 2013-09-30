@@ -11,17 +11,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "argtable2.h"
-#include "libconfig.h"
+#include "commons/argtable/argtable2.h"
 #include "commons/log.h"
 #include "commons/system_utils.h"
 #include "commons/file_utils.h"
+
+#include "bioformats/features/region/region_table.h"
+
+#include "commons_bam.h"
 
 //============================ DEFAULT VALUES ============================
 
 //------------------------------------------------------------------------
 
-//#define NUM_FILTER_OPTIONS     16
 #define NUM_FILTER_OPTIONS     14
 
 //------------------------------------------------------------------------
@@ -33,8 +35,6 @@ typedef struct filter_options {
   int num_threads;
   int batch_size;
 
-  int mapped;
-  int unmapped;
   int unique;
   int proper_pairs;
   int min_num_errors;
@@ -43,6 +43,8 @@ typedef struct filter_options {
   int max_quality;
   int min_length;
   int max_length;
+
+  region_table_t *region_table;
 
   char *length_range;
   char *quality_range;
@@ -59,16 +61,16 @@ typedef struct filter_options {
 
 //------------------------------------------------------------------------
 
-filter_options_t *new_filter_options(char *exec_name, char *command_nane);
+filter_options_t *filter_options_new(char *exec_name, char *command_nane);
 
-filter_options_t *parse_filter_options(char *exec_name, char *command_nane,
+filter_options_t *filter_options_parse(char *exec_name, char *command_nane,
 				       int argc, char **argv);
 
-void free_filter_options(filter_options_t *opts);
+void filter_options_free(filter_options_t *opts);
 
-void validate_filter_options(filter_options_t *opts);
+void filter_options_validate(filter_options_t *opts);
 
-void display_filter_options(filter_options_t *opts);
+void filter_options_display(filter_options_t *opts);
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------

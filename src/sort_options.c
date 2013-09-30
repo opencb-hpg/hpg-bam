@@ -13,7 +13,7 @@ extern void usage_argtable(char *exec_name, char *command_name, void **argtable)
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
-sort_options_t *new_sort_options(char *exec_name, char *command_name) {
+sort_options_t *sort_options_new(char *exec_name, char *command_name) {
   sort_options_t *opts = (sort_options_t*) calloc (1, sizeof(sort_options_t));
   
   opts->help = 0;
@@ -32,11 +32,11 @@ sort_options_t *new_sort_options(char *exec_name, char *command_name) {
 
 //------------------------------------------------------------------------
 
-sort_options_t *parse_sort_options(char *exec_name, char *command_name,
-				     int argc, char **argv) {
+sort_options_t *sort_options_parse(char *exec_name, char *command_name,
+				   int argc, char **argv) {
   void **argtable = new_argtable_sort_options();
   
-  sort_options_t *opts = new_sort_options(exec_name, command_name);
+  sort_options_t *opts = sort_options_new(exec_name, command_name);
   if (argc < 2) {
     usage_argtable(exec_name, command_name, argtable);
   } else {  
@@ -65,7 +65,7 @@ sort_options_t *parse_sort_options(char *exec_name, char *command_name,
 
 //------------------------------------------------------------------------
 
-void free_sort_options(sort_options_t *opts) {
+void sort_options_free(sort_options_t *opts) {
   if (opts == NULL) { return; }
   
   if (opts->criteria) { free(opts->criteria); }
@@ -81,7 +81,7 @@ void free_sort_options(sort_options_t *opts) {
 
 //------------------------------------------------------------------------
 
-void validate_sort_options(sort_options_t *opts) {
+void sort_options_validate(sort_options_t *opts) {
   if (! exists(opts->in_filename)) {
     printf("\nError: Input file name not found !\n\n");
     usage_sort_options(opts);
@@ -97,6 +97,10 @@ void validate_sort_options(sort_options_t *opts) {
     usage_sort_options(opts);
   }
 
+  if (!opts->criteria) {
+    opts->criteria = strdup("coord");
+  }
+
   if (strcmp("name", opts->criteria)  != 0 &&
       strcmp("coord", opts->criteria) != 0    ) {
     printf("\nError: Invalid criteria by sorting (%s), valid values are 'coord' to sort by chromosomal coordinates (default value), and 'name' to sort by read names\n", opts->criteria);
@@ -106,7 +110,7 @@ void validate_sort_options(sort_options_t *opts) {
 
 //------------------------------------------------------------------------
 
-void display_sort_options(sort_options_t *opts) {
+void sort_options_display(sort_options_t *opts) {
   printf("PARAMETERS CONFIGURATION\n");
   printf("=================================================\n");
   printf("Main options\n");

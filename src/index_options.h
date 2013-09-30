@@ -43,16 +43,16 @@ typedef struct index_options {
 
 //------------------------------------------------------------------------
 
-index_options_t *new_index_options(char *exec_name, char *command_nane);
+index_options_t *index_options_new(char *exec_name, char *command_nane);
 
-index_options_t *parse_index_options(char *exec_name, char *command_nane,
+index_options_t *index_options_parse(char *exec_name, char *command_nane,
 				     int argc, char **argv);
 
-void free_index_options(index_options_t *opts);
+void index_options_free(index_options_t *opts);
 
-void validate_index_options(index_options_t *opts);
+void index_options_validate(index_options_t *opts);
 
-void display_index_options(index_options_t *opts);
+void index_options_display(index_options_t *opts);
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------

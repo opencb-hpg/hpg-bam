@@ -7,13 +7,10 @@ void usage_filter_options(filter_options_t *opts);
 void **new_argtable_filter_options();
 filter_options_t *read_cli_filter_options(void **argtable, filter_options_t *opts);
 
-extern void free_argtable(int num_options, void **argtable);
-extern void usage_argtable(char *exec_name, char *command_name, void **argtable);
-
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
-filter_options_t *new_filter_options(char *exec_name, char *command_name) {
+filter_options_t *filter_options_new(char *exec_name, char *command_name) {
   filter_options_t *opts = (filter_options_t*) calloc (1, sizeof(filter_options_t));
   
   opts->log_level = 0;
@@ -26,8 +23,8 @@ filter_options_t *new_filter_options(char *exec_name, char *command_name) {
   opts->gff_region_filename = NULL;
   opts->region_list = NULL;
 
-  opts->mapped = 0;
-  opts->unmapped = 0;
+  opts->region_table = NULL;
+
   opts->unique = 0;
   opts->proper_pairs = 0;
   opts->min_num_errors = -1;
@@ -45,11 +42,11 @@ filter_options_t *new_filter_options(char *exec_name, char *command_name) {
 
 //------------------------------------------------------------------------
 
-filter_options_t *parse_filter_options(char *exec_name, char *command_name,
-				     int argc, char **argv) {
+filter_options_t *filter_options_parse(char *exec_name, char *command_name,
+				       int argc, char **argv) {
   void **argtable = new_argtable_filter_options();
   
-  filter_options_t *opts = new_filter_options(exec_name, command_name);
+  filter_options_t *opts = filter_options_new(exec_name, command_name);
   if (argc < 2) {
     usage_argtable(exec_name, command_name, argtable);
   } else {  
@@ -78,8 +75,12 @@ filter_options_t *parse_filter_options(char *exec_name, char *command_name,
 
 //------------------------------------------------------------------------
 
-void free_filter_options(filter_options_t *opts) {
+void filter_options_free(filter_options_t *opts) {
   if (opts == NULL) { return; }
+
+  if (opts->region_table) {
+    free_region_table(opts->region_table);
+  }
   
   if (opts->in_filename) { free(opts->in_filename); }
   if (opts->out_dirname) { free(opts->out_dirname); }
@@ -98,7 +99,7 @@ void free_filter_options(filter_options_t *opts) {
 
 //------------------------------------------------------------------------
 
-void validate_filter_options(filter_options_t *opts) {
+void filter_options_validate(filter_options_t *opts) {
   if (! exists(opts->in_filename)) {
     printf("\nError: Input file name not found !\n\n");
     usage_filter_options(opts);
@@ -108,77 +109,70 @@ void validate_filter_options(filter_options_t *opts) {
     opts->out_dirname = strdup(".");
   }
 
-  int min_value, max_value;
-  char min[512], *max;
+  // region table
+  opts->region_table = build_region_table(opts->in_filename, 
+					  opts->region_list, 
+					  opts->gff_region_filename);
 
-  if (opts->length_range) {
-    strcpy(min, opts->length_range);
-    max = strstr(min, "-");
-    if (max == NULL) {
-      printf("\nError: invalid alignment length range %s: the mininum and maximum value must be separted by a comma, e.g.: 95,105\n\n", opts->length_range);
-      usage_filter_options(opts);
-    }
-    *max = 0;
-    opts->min_length = atoi(min);
-    opts->max_length = atoi(max + 1);
+  // length range
+  if (!parse_range(&opts->min_length, &opts->max_length, 
+		   opts->length_range, "alignment length range")) {
+    usage_filter_options(opts);
   }
 
-  if (opts->quality_range) {
-    strcpy(min, opts->quality_range);
-    max = strstr(min, "-");
-    if (max == NULL) {
-      printf("\nError: invalid alignment quality range %s: the mininum and maximum value must be separted by a comma, e.g.: 200,245\n\n", opts->quality_range);
-      usage_filter_options(opts);
-    }
-    *max = 0;
-    opts->min_quality = atoi(min);
-    opts->max_quality = atoi(max + 1);
+  // quality range
+  if (!parse_range(&opts->min_quality, &opts->max_quality, 
+		   opts->quality_range, "alignment quality range")) {
+    usage_filter_options(opts);
   }
 
-  if (opts->num_errors_range) {
-    strcpy(min, opts->num_errors_range);
-    max = strstr(min, "-");
-    if (max == NULL) {
-      printf("\nError: invalid num. errors range %s: the mininum and maximum value must be separted by a comma, e.g.: 0,3\n\n", opts->num_errors_range);
-      usage_filter_options(opts);
-    }
-    *max = 0;
-    opts->min_num_errors = atoi(min);
-    opts->max_num_errors = atoi(max + 1);
+  // number of errors range
+  if (!parse_range(&opts->min_num_errors, &opts->max_num_errors, 
+		   opts->num_errors_range, "alignment quality range")) {
+    usage_filter_options(opts);
   }
 }
 
 //------------------------------------------------------------------------
 
-void display_filter_options(filter_options_t *opts) {
+void filter_options_display(filter_options_t *opts) {
   printf("PARAMETERS CONFIGURATION\n");
   printf("=================================================\n");
-  printf("Main options\n");
+  printf("Command name : %s\n", opts->command_name);
+
+  printf("\nMain options\n");
   printf("\tBAM input filename  : %s\n", opts->in_filename);
   printf("\tOutput dirname      : %s\n", opts->out_dirname);
+
+  printf("\nFilter options\n");
+  printf("\tMapped reads\n");
+
   if (opts->region_list) {
-    printf("\tRegions             : %s\n", opts->region_list);
+    printf("\tBy regions             : %s\n", opts->region_list);
   } else if (opts->gff_region_filename) {
-    printf("\tGFF region filename : %s\n", opts->gff_region_filename);
+    printf("\tBy GFF region filename : %s\n", opts->gff_region_filename);
   }
-  printf("\n");
+  if (opts->unique) {
+    printf("\tBy unique alignments\n");
+  }
+  if (opts->proper_pairs) {
+    printf("\tBy proper pairs\n");
+  }
+  if (opts->quality_range) {
+    printf("\tBy quality range     : %s\n", opts->quality_range);
+  }
+  if (opts->length_range) {
+    printf("\tBy length range      : %s\n", opts->length_range);
+  }
+  if (opts->num_errors_range) {
+    printf("\tBy num. errors range : %s\n", opts->num_errors_range);
+  }
 
-  printf("Filters\n");
-  if (opts->mapped) printf("\tBy mapped reads\n");
-  if (opts->unmapped) printf("\tBy unmapped reads\n");
-  if (opts->unique) printf("\tBy unique alignments\n");
-  if (opts->proper_pairs) printf("\tBy proper pairs\n");
-  if (opts->quality_range) printf("\tBy quality range        : %i - %i\n", opts->min_quality, opts->max_quality);
-  if (opts->length_range) printf("\tBy length range          : %i - %i\n", opts->min_length, opts->max_length);
-  if (opts->num_errors_range) printf("\tBy num. errors range : %i - %i\n", opts->min_num_errors, opts->max_num_errors);
-  printf("\n");
-
-  printf("Report options\n");
+  printf("\nReport options\n");
   printf("\tLog level: %d\n",  (int) opts->log_level);
   printf("\tVerbose  : %d\n",  (int) opts->verbose);
-  printf("\n");
 
-  printf("Architecture options\n");
+  printf("\nArchitecture options\n");
   printf("\tNum. threads: %d\n",  (int) opts->num_threads);
   printf("\tBatch size  : %d alignments\n",  (int) opts->batch_size);
   printf("=================================================\n");
@@ -196,17 +190,15 @@ filter_options_t *read_cli_filter_options(void **argtable, filter_options_t *opt
   if (((struct arg_int*)argtable[5])->count) { opts->num_threads = *(((struct arg_int*)argtable[5])->ival); }
   if (((struct arg_int*)argtable[6])->count) { opts->batch_size = *(((struct arg_int*)argtable[6])->ival); }
 
-  if (((struct arg_int*)argtable[7])->count) { opts->mapped = ((struct arg_int*)argtable[7])->count; }
-  if (((struct arg_int*)argtable[8])->count) { opts->unmapped = ((struct arg_int*)argtable[8])->count; }
-  if (((struct arg_int*)argtable[9])->count) { opts->unique = ((struct arg_int*)argtable[9])->count; }
-  if (((struct arg_int*)argtable[10])->count) { opts->proper_pairs = ((struct arg_int*)argtable[10])->count; }
+  if (((struct arg_int*)argtable[7])->count) { opts->unique = ((struct arg_int*)argtable[7])->count; }
+  if (((struct arg_int*)argtable[8])->count) { opts->proper_pairs = ((struct arg_int*)argtable[8])->count; }
   
-  if (((struct arg_str*)argtable[11])->count) { opts->length_range = strdup(*(((struct arg_str*)argtable[11])->sval)); }
-  if (((struct arg_str*)argtable[12])->count) { opts->quality_range = strdup(*(((struct arg_str*)argtable[12])->sval)); }
-  if (((struct arg_str*)argtable[13])->count) { opts->num_errors_range = strdup(*(((struct arg_str*)argtable[13])->sval)); }
+  if (((struct arg_str*)argtable[9])->count) { opts->length_range = strdup(*(((struct arg_str*)argtable[9])->sval)); }
+  if (((struct arg_str*)argtable[10])->count) { opts->quality_range = strdup(*(((struct arg_str*)argtable[10])->sval)); }
+  if (((struct arg_str*)argtable[11])->count) { opts->num_errors_range = strdup(*(((struct arg_str*)argtable[11])->sval)); }
   
-  //  if (((struct arg_file*)argtable[14])->count) { opts->gff_region_filename = strdup(*(((struct arg_file*)argtable[14])->filename)); }
-  //  if (((struct arg_str*)argtable[15])->count) { opts->region_list = strdup(*(((struct arg_str*)argtable[15])->sval)); }
+  if (((struct arg_file*)argtable[12])->count) { opts->gff_region_filename = strdup(*(((struct arg_file*)argtable[12])->filename)); }
+  if (((struct arg_str*)argtable[13])->count) { opts->region_list = strdup(*(((struct arg_str*)argtable[13])->sval)); }
 
   return opts;
 }
@@ -233,17 +225,15 @@ void** new_argtable_filter_options() {
   argtable[5] = arg_int0(NULL, "num-threads", NULL, "Number of threads");
   argtable[6] = arg_int0(NULL, "batch-size", NULL, "Batch size (in number of alignments)");
   
-  argtable[7] = arg_lit0(NULL, "mapped", "Filter by mapped reads");
-  argtable[8] = arg_lit0(NULL, "unmapped", "Filter by unmapped reads");
-  argtable[9] = arg_lit0(NULL, "unique", "Filter by unique alignments");
-  argtable[10] = arg_lit0(NULL, "proper-pairs", "Filter by proper pairs");
+  argtable[7] = arg_lit0(NULL, "unique", "Filter by unique alignments");
+  argtable[8] = arg_lit0(NULL, "proper-pairs", "Filter by proper pairs");
 
-  argtable[11] = arg_str0(NULL, "alignment-size", NULL, "Filter by alignment size range (e.g., 95-105)");
-  argtable[12] = arg_str0(NULL, "quality", NULL, "Filter by quality range (e.g., 210-250)");
-  argtable[13] = arg_str0(NULL, "num-errors", NULL, "Filter by number of errors range (e.g., 0-3)");
+  argtable[9] = arg_str0(NULL, "length-range", NULL, "Filter by alignment size range (e.g., 95-105)");
+  argtable[10] = arg_str0(NULL, "quality-range", NULL, "Filter by quality range (e.g., 210-250)");
+  argtable[11] = arg_str0(NULL, "num-errors-range", NULL, "Filter by number of errors range (e.g., 0-3)");
 
-  //  argtable[14] = arg_file0(NULL, "gff-refion-file", NULL, "Region file name (GFF format)");
-  //  argtable[15] = arg_str0(NULL, "region-list", NULL, "Regions (e.g., 1:3000-3200,4:100-200,...)");
+  argtable[12] = arg_file0(NULL, "gff-refion-file", NULL, "Region file name (GFF format)");
+  argtable[13] = arg_str0(NULL, "region-list", NULL, "Regions (e.g., 1:3000-3200,4:100-200,...)");
 
   argtable[NUM_FILTER_OPTIONS] = arg_end(20);
   
@@ -252,8 +242,6 @@ void** new_argtable_filter_options() {
 
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
-
-
 
 /*
 int read_config_file(const char *filename, options_t *opts) {

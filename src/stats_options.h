@@ -17,12 +17,15 @@
 #include "commons/system_utils.h"
 #include "commons/file_utils.h"
 
+#include "bioformats/db/db_utils.h"
+
+#include "commons_bam.h"
+
 //============================ DEFAULT VALUES ============================
 
 //------------------------------------------------------------------------
 
-//#define NUM_STATS_OPTIONS	10
-#define NUM_STATS_OPTIONS	8
+#define NUM_STATS_OPTIONS	10
 
 //------------------------------------------------------------------------
 
@@ -32,7 +35,11 @@ typedef struct stats_options {
   int help;
   int num_threads;
   int batch_size;
-  int db;
+  int db_on;
+
+  khash_t(stats_chunks) *hash;
+  sqlite3 *db;
+  region_table_t *region_table;
 
   char* in_filename;
   char* out_dirname;
@@ -50,12 +57,12 @@ stats_options_t *stats_options_new(char *exec_name, char *command_nane);
 void stats_options_free(stats_options_t *opts);
 
 
-stats_options_t *parse_stats_options(char *exec_name, char *command_nane,
+stats_options_t *stats_options_parse(char *exec_name, char *command_nane,
 				     int argc, char **argv);
 
-void validate_stats_options(stats_options_t *opts);
+void stats_options_validate(stats_options_t *opts);
 
-void display_stats_options(stats_options_t *opts);
+void stats_options_display(stats_options_t *opts);
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
