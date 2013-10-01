@@ -168,7 +168,12 @@ int main (int argc, char *argv[]) {
 
     // set parameters
     char idx_filename[strlen(opts->out_dirname) + strlen(opts->in_filename) + 10];
-    sprintf(idx_filename, "%s/%s.bai", opts->out_dirname, opts->in_filename);
+    char *p = strrchr(opts->in_filename, '/');
+    if (p) {
+      sprintf(idx_filename, "%s/%s.bai", opts->out_dirname, p + 1);
+    } else {
+      sprintf(idx_filename, "%s/%s.bai", opts->out_dirname, opts->in_filename);
+    }
 
     // run index
     bamFile bf = bam_open(opts->in_filename, "r");
@@ -176,6 +181,9 @@ int main (int argc, char *argv[]) {
     bam_close(bf);
     
     FILE *idxf = fopen(idx_filename, "wb");
+    if (idxf == NULL) {
+      LOG_FATAL_F("Could not open file %s", idx_filename);
+    }
     bam_index_save(idx, idxf);
     bam_index_destroy(idx);
     fclose(idxf);
